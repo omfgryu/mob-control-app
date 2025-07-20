@@ -226,3 +226,9 @@ def get_local_time_for_country(country_name):
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+# ... all your Flask routes above this line ...
+
+# ✅ Add this at the very bottom of app.py
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
