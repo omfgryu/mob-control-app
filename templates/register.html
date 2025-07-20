@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- ✅ Added for responsiveness -->
     <title>Mob Control Player Registration</title>
     <meta name="author" content="Amrit Sahai">
-    <meta name="email" content="amritsahai117@gmail.com">
+<meta name="email" content="amritsahai117@gmail.com">
 
     <style>
         body {
@@ -190,30 +190,35 @@
 
     <h2>Register Player</h2>
     <form method="POST" autocomplete="off">
-        <label for="name">In-Game Name</label>
-        <input type="text" name="name" required>
+    <label for="name">In-Game Name</label>
+    <input type="text" name="name" required>
 
-        <label for="country">Select Country</label>
-        <select name="country" id="country-select" required>
-            <option value="">-- Choose Country --</option>
-            {% for country in countries %}
-                <option value="{{ country }}">{{ country }}</option>
-            {% endfor %}
-        </select>
+    <label for="country">Select Country</label>
+    <select name="country" id="country-select" required>
+        <option value="">-- Choose Country --</option>
+        {% for country in countries %}
+            <option value="{{ country }}">{{ country }}</option>
+        {% endfor %}
+    </select>
 
-        <div class="time-display" id="local-time">🕒 Local time will appear here</div>
+    <div class="time-display" id="local-time">🕒 Local time will appear here</div>
 
-        <label for="tier">Select Rank Tier</label>
-        <select name="tier" required>
-            {% for tier in tiers %}
-                <option value="{{ tier }}">{{ tier }}</option>
-            {% endfor %}
-        </select>
+    <label for="tier">Select Rank Tier</label>
+    <select name="tier" required>
+        {% for tier in tiers %}
+            <option value="{{ tier }}">{{ tier }}</option>
+        {% endfor %}
+    </select>
 
-        <input type="text" name="email_confirm" style="display:none" autocomplete="off">
+    <!-- ✅ Added social_links input -->
+    <label for="social_links">Social / Discord / IGN (optional)</label>
+    <input type="text" name="social_links" placeholder="Enter social handle or IGN">
 
-        <button type="submit">Register</button>
-    </form>
+    <input type="text" name="email_confirm" style="display:none" autocomplete="off">
+
+    <button type="submit">Register</button>
+</form>
+
 </div>
 
 <script>

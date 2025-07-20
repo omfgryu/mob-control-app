@@ -1,6 +1,0 @@
-*.pyc
-__pycache__/
-players.db
-.env
-.vscode/
-.idea/
