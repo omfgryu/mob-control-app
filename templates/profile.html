@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>{{ player.username }}'s Profile</title>
+  <meta name="author" content="Amrit Sahai">
+  <meta name="email" content="amritsahai117@gmail.com">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h1>{{ player.username }}'s Profile</h1>
+  <p><strong>Country:</strong> {{ player.country }}</p>
+  <p><strong>Tier:</strong> {{ player.tier }}</p>
+  <p><strong>Local Time:</strong> {{ player.local_time }}</p>
+
+  {% if player.social_links %}
+    <p><strong>Social:</strong> {{ player.social_links }}</p>
+  {% endif %}
+
+  <!-- 🔔 Ping Form -->
+  <form method="POST" action="{{ url_for('ping_player', player_id=player.id) }}">
+    <label for="sender_name"><strong>Your Name:</strong></label>
+    <input type="text" name="sender_name" placeholder="Enter your name" required>
+    <button type="submit">🔔 Ping</button>
+  </form>
+
+  <!-- 🔇 Mute and 🚫 Block (non-functional placeholders) -->
+  <button disabled>🔇 Mute</button>
+  <button disabled>🚫 Block</button>
+
+  <hr>
+
+  <!-- 📬 Incoming Pings Section -->
+  <h2>📬 Incoming Pings</h2>
+  {% if pings %}
+    <ul>
+      {% for ping in pings %}
+        <li>
+          <strong>{{ ping.sender_name }}</strong> from {{ ping.sender_country }} at {{ ping.timestamp }} UTC
+
+          <!-- ↩️ Ping Back Form -->
+          <form method="POST" action="{{ url_for('ping_player', player_id=player.id) }}" style="display:inline;">
+            <input type="hidden" name="sender_name" value="{{ player.username }}">
+            <button type="submit">↩️ Ping Back</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No pings received yet.</p>
+  {% endif %}
+
+  <br><br>
+  <a href="{{ url_for('players') }}">← Back to All Players</a>
+<p style="margin-top: 50px; font-size: 0.9em; color: gray; text-align: center;">
+  🌟 Made with 💡 by <strong>Amrit Sahai</strong> — Contact: <a href="mailto:amritsahai117@gmail.com">amritsahai117@gmail.com</a>
+</p>
+
+</body>
+</html>

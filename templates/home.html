@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}All Registered Players{% endblock %}
+
+{% block content %}
+<h2>All Registered Players</h2>
+
+<!-- Player Table -->
+<table>
+    <thead>
+        <tr>
+            <th>In-Game Name</th>
+            <th>Region</th>
+            <th>Timezone</th>
+            <th>Rank</th>
+            <th>Social Media</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Loop through all players passed from Flask backend -->
+        {% for player in players %}
+        <tr>
+            <td>{{ player[0] }}</td> <!-- in_game_name -->
+            <td>{{ player[1] }}</td> <!-- region -->
+            <td>{{ player[2] }}</td> <!-- timezone -->
+            <td>{{ player[3] }}</td> <!-- rank -->
+            <td>
+                <!-- If social is provided, make it a clickable link -->
+                {% if player[4] %}
+                    <a href="{{ player[4] }}" target="_blank">🔗</a>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Link to Register page -->
+<p><a href="/register">+ Add New Player</a></p>
+{% endblock %}

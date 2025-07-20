@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}Mob Control{% endblock %}</title>
+    
+    <!-- ✅ Your Identity Info (Protects ownership) -->
+    <meta name="author" content="Amrit Sahai" />
+    <meta name="email" content="amritsahai117@gmail.com" />
+
+    <!-- ✅ Responsive Design -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- ✅ Your Styling -->
+    <style>
+        /* (your CSS continues below this line...) */
+
+        :root {
+            --bg-dark: #1e1e2f;
+            --bg-light: #f0f0f5;
+            --text-dark: #f4f4f4;
+            --text-light: #1a1a2e;
+            --primary: #00ffff;
+            --accent-dark: #2c2f48;
+            --accent-light: #d6e6f2;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+            transition: all 0.3s ease;
+        }
+
+        .light-mode {
+            background-color: var(--bg-light);
+            color: var(--text-light);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid var(--primary);
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--accent-dark);
+        }
+
+        .light-mode th {
+            background-color: var(--accent-light);
+        }
+
+        input, select {
+            padding: 6px;
+            margin-right: 10px;
+            border-radius: 5px;
+            border: none;
+            background-color: #1a1a2e;
+            color: #f4f4f4;
+        }
+
+        .light-mode input,
+        .light-mode select {
+            background-color: #ffffff;
+            color: #000;
+        }
+
+        button {
+            background-color: var(--primary);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            color: black;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #00cccc;
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 9999;
+            background: none;
+            border: none;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            input, select, button {
+                display: block;
+                margin: 10px 0;
+                width: 100%;
+            }
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        const toggleBtn = document.querySelector('.theme-toggle');
+        const body = document.body;
+
+        function setTheme(mode) {
+            if (mode === 'light') {
+                body.classList.add('light-mode');
+                toggleBtn.innerText = '☀️';
+            } else {
+                body.classList.remove('light-mode');
+                toggleBtn.innerText = '🌙';
+            }
+            localStorage.setItem('theme', mode);
+        }
+
+        function toggleTheme() {
+            const current = body.classList.contains('light-mode') ? 'light' : 'dark';
+            setTheme(current === 'light' ? 'dark' : 'light');
+        }
+
+        // Load theme preference
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        setTheme(savedTheme);
+    </script>
+    <!-- Any other content above -->
+
+    <!-- Footer -->
+    <footer style="margin-top: 50px; font-size: 0.9em; color: gray; text-align: center;">
+      🌟 Made with 💡 by <strong>Amrit Sahai</strong> — Contact: <a href="mailto:amritsahai117@gmail.com">amritsahai117@gmail.com</a>
+    </footer>
+
+</body>
+</html>
+

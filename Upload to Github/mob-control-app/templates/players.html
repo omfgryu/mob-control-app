@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}All Players{% endblock %}
+{% block content %}
+<h2>Registered Players</h2>
+<table>
+  <tr>
+    <th>Username</th><th>Region</th><th>Tier</th><th>Actions</th>
+  </tr>
+  {% for player in players %}
+  <tr>
+    <td>{{ player[1] }}</td>
+    <td>{{ player[2] }}</td>
+    <td>{{ player[4] }}</td>
+    <td><a href="/profile/{{ player[0] }}">View Profile</a></td>
+  </tr>
+  {% endfor %}
+</table>
+<a href="/">⬅️ Back to Register</a>
+{% endblock %}

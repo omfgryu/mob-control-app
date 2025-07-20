@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Mob Control Registered Players</title>
+    <meta name="author" content="Amrit Sahai">
+    <meta name="email" content="amritsahai117@gmail.com">
+
+    <style>
+        /* (CSS remains unchanged, full styles preserved) */
+        body {
+            background-color: #1a1d2e;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        h2 {
+            text-align: center;
+            color: #9ecbff;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            border: 1px solid #3a3f5c;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #272b3f;
+        }
+
+        tr:nth-child(even) {
+            background-color: #202437;
+        }
+
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .ping-btn {
+            background-color: #6ec1e4;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .ping-btn:hover {
+            background-color: #5ab0d6;
+        }
+
+        form.search-form {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        form.search-form input[type="text"],
+        form.search-form select {
+            padding: 8px;
+            border-radius: 8px;
+            border: none;
+            background-color: #272b3f;
+            color: #fff;
+            min-width: 150px;
+            font-size: 14px;
+        }
+
+        form.search-form button {
+            padding: 8px 16px;
+            background-color: #6ec1e4;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        form.search-form button:hover {
+            background-color: #5ab0d6;
+        }
+
+        body.light-mode {
+            background-color: #f4f4f4;
+            color: #000;
+        }
+
+        body.light-mode table th {
+            background-color: #ddd;
+            color: #000;
+            border-color: #ccc;
+        }
+
+        body.light-mode table td {
+            border-color: #ccc;
+        }
+
+        body.light-mode tr:nth-child(even) {
+            background-color: #eee;
+        }
+
+        body.light-mode form.search-form input[type="text"],
+        body.light-mode form.search-form select {
+            background-color: #f0f0f0;
+            color: #000;
+        }
+
+        body.light-mode form.search-form button {
+            background-color: #4ca3dd;
+            color: #fff;
+        }
+
+        body.light-mode form.search-form button:hover {
+            background-color: #3b88c3;
+        }
+
+        .toggle-theme {
+            position: fixed;
+            top: 15px;
+            right: 20px;
+            cursor: pointer;
+            font-size: 24px;
+            user-select: none;
+            color: #6ec1e4;
+            z-index: 1000;
+        }
+
+        body.light-mode .toggle-theme {
+            color: #00695c;
+        }
+    </style>
+</head>
+<body>
+
+<div class="toggle-theme" id="theme-toggle">🌙</div>
+
+<h2>Registered Mob Control Players</h2>
+
+<form class="search-form" method="GET" action="{{ url_for('players') }}">
+    <input type="text" name="name" placeholder="Search by Name" value="{{ search_name }}">
+    <select name="country">
+        <option value="">All Countries</option>
+        {% for country in countries %}
+            <option value="{{ country }}" {% if country == search_country %}selected{% endif %}>{{ country }}</option>
+        {% endfor %}
+    </select>
+    <select name="tier">
+        <option value="">All Tiers</option>
+        {% for tier in tiers %}
+            <option value="{{ tier }}" {% if tier == search_tier %}selected{% endif %}>{{ tier }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Search</button>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Country</th>
+            <th>Rank Tier</th>
+            <th>Registered At (UTC)</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for player in players %}
+            <tr>
+                <td>{{ player[0] }}</td>
+                <td>{{ player[1] }}</td>
+                <td>{{ player[2] }}</td>
+                <td>{{ player[3] }}</td>
+                <td>{{ player[4] }}</td>
+                <td>
+                    <form action="{{ url_for('delete_player', player_id=player[0]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this player?');" style="display:inline;">
+                        <button type="submit" class="delete-btn">Delete</button>
+                    </form>
+                    <button class="ping-btn" data-player-id="{{ player[0] }}">🔔 Ping</button>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6" style="text-align:center;">No players found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{{ url_for('register') }}" style="color: #6ec1e4; font-weight: bold;">← Back to Registration</a>
+
+<script>
+    const toggle = document.getElementById('theme-toggle');
+    toggle.addEventListener('click', () => {
+        document.body.classList.toggle('light-mode');
+        toggle.innerText = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+    });
+
+    document.querySelectorAll('.ping-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const userId = button.dataset.playerId;
+            fetch(`/ping/${userId}`, { method: 'POST' });
+            // 🔇 Chime sound removed
+        });
+    });
+</script>
+<p style="margin-top: 50px; font-size: 0.9em; color: gray; text-align: center;">
+  🌟 Made with 💡 by <strong>Amrit Sahai</strong> — Contact: <a href="mailto:amritsahai117@gmail.com">amritsahai117@gmail.com</a>
+</p>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ player[1] }}'s Profile{% endblock %}
+{% block content %}
+<h2>{{ player[1] }}'s Profile</h2>
+<p><strong>Region:</strong> {{ player[2] }}</p>
+<p><strong>Tier:</strong> {{ player[4] }}</p>
+<p><strong>Timezone:</strong> {{ player[3] }}</p>
+<p><strong>Current Local Time:</strong> {{ local_time }}</p>
+<p><strong>Social:</strong> {{ player[5] if player[5] else "N/A" }}</p>
+<a href="/players">⬅️ Back to Players</a>
+{% endblock %}
