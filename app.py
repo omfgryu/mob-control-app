@@ -225,10 +225,7 @@ def get_local_time_for_country(country_name):
         return "N/A"
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    import os
+    port = int(os.environ.get("PORT", 10000))  # Use Render's provided PORT
+    app.run(host="0.0.0.0", port=port)
 
-# ... all your Flask routes above this line ...
-
-# ✅ Add this at the very bottom of app.py
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
