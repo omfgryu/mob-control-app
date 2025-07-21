@@ -20,17 +20,6 @@
             margin-bottom: 20px;
         }
 
-        .flash-message {
-            text-align: center;
-            background-color: #2ecc71;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin: -10px auto 20px auto;
-            width: fit-content;
-            font-weight: bold;
-        }
-
         table {
             width: 100%;
             border-collapse: collapse;
@@ -169,19 +158,6 @@
 
 <h2>Registered Mob Control Players</h2>
 
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <div class="flash-message">
-      {{ messages[0] }}
-    </div>
-  {% endif %}
-{% endwith %}
-
-<p style="text-align:center; margin-top:-10px; margin-bottom: 20px;">
-    <a href="{{ url_for('register') }}" style="color: #6ec1e4; font-weight:bold;">← Back to Registration</a> | 
-    <a href="{{ url_for('players') }}" style="color: #6ec1e4; font-weight:bold;">View All Registered Players →</a>
-</p>
-
 <form class="search-form" method="GET" action="{{ url_for('players') }}">
     <input type="text" name="name" placeholder="Search by Name" value="{{ search_name }}">
     <select name="country">
@@ -239,6 +215,8 @@
     </tbody>
 </table>
 
+<a href="{{ url_for('register') }}" style="color: #6ec1e4; font-weight: bold;">← Back to Registration</a>
+
 <script>
     const toggle = document.getElementById('theme-toggle');
     toggle.addEventListener('click', () => {
@@ -249,7 +227,7 @@
     document.querySelectorAll('.ping-btn').forEach(button => {
         button.addEventListener('click', () => {
             const userId = button.dataset.playerId;
-            fetch(`/ping/${userId}`, { method: 'POST' });
+            fetch(/ping/${userId}, { method: 'POST' });
         });
     });
 
