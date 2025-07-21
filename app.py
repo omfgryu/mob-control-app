@@ -61,6 +61,18 @@ conn.close()
 def sanitize_input(text):
     return re.sub(r'[^a-zA-Z0-9 _\-\.\$]', '', text)
 
+# ✅ Home route added
+@app.route('/')
+def home():
+    return '''
+    <h2 style="text-align:center; font-family:sans-serif;">
+        🧠 Mob Control App<br>Player Matchmaking Tool
+    </h2>
+    <p style="text-align:center;">
+        <a href="/register">Register</a> | <a href="/players">View Players</a>
+    </p>
+    '''
+
 @app.route("/", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -112,7 +124,7 @@ def register():
             conn.close()
 
             flash(f"Player '{name}' registered successfully!", "success")
-            return redirect(url_for("register"))
+            return redirect(url_for("players"))  # 👈 Redirect to players page
 
         except Exception as e:
             flash(f"Database error: {e}", "error")
@@ -228,4 +240,3 @@ if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 10000))  # Use Render's provided PORT
     app.run(host="0.0.0.0", port=port)
-
