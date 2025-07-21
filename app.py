@@ -124,7 +124,7 @@ def register():
             conn.close()
 
             flash(f"Player '{name}' registered successfully!", "success")
-            return redirect(url_for("players"))
+            return redirect(url_for("register"))
 
         except Exception as e:
             flash(f"Database error: {e}", "error")
