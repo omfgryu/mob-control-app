@@ -473,62 +473,52 @@ def ping_player(player_id):
     if sender_id == player_id:
         return jsonify({'error': 'Cannot ping yourself'}), 400
 
+    conn = None
     try:
-        conn = get_db_connection()
+        # Use connection pool if available, fallback to regular connection
+        if connection_pool:
+            conn = connection_pool.getconn()
+        else:
+            conn = get_db_connection()
+            
         cur = conn.cursor()
         
-        # Get sender info from players table (PostgreSQL)
-        cur.execute("SELECT name, country FROM players WHERE id = %s", (sender_id,))
-        sender_info = cur.fetchone()
-        
-        if not sender_info:
-            cur.close()
-            conn.close()
-            return jsonify({'error': 'Sender not found'}), 400
-            
-        sender_name, sender_country = sender_info
-        
-        # Insert into pings table
+        # Optimized: Single query that validates sender exists and inserts ping
         cur.execute("""
             INSERT INTO pings (sender_id, receiver_id, timestamp, is_read) 
-            VALUES (%s, %s, CURRENT_TIMESTAMP, FALSE)
-        """, (sender_id, player_id))
+            SELECT %s, %s, CURRENT_TIMESTAMP, FALSE
+            WHERE EXISTS (SELECT 1 FROM players WHERE id = %s)
+            RETURNING id
+        """, (sender_id, player_id, sender_id))
+        
+        result = cur.fetchone()
+        if not result:
+            cur.close()
+            if connection_pool and conn:
+                connection_pool.putconn(conn)
+            else:
+                conn.close()
+            return jsonify({'error': 'Sender not found'}), 400
         
         conn.commit()
         cur.close()
-        conn.close()
+        
+        # Properly return connection to pool or close it
+        if connection_pool and conn:
+            connection_pool.putconn(conn)
+        else:
+            conn.close()
         
         return jsonify({'success': True, 'message': 'Ping sent successfully!'}), 200
         
     except Exception as e:
         print(f"Ping error: {e}")  # This will show in your Render logs
+        if conn:
+            if connection_pool:
+                connection_pool.putconn(conn)
+            else:
+                conn.close()
         return jsonify({'error': 'Failed to send ping'}), 500
-
-@app.route("/mark_ping_read/<int:ping_id>", methods=["POST"])
-def mark_ping_read(ping_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'Not logged in'}), 401
-    
-    user_id = session['user_id']
-    
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Mark ping as read only if it belongs to the current user
-        cur.execute("""
-            UPDATE pings SET is_read = TRUE 
-            WHERE id = %s AND receiver_id = %s
-        """, (ping_id, user_id))
-        
-        conn.commit()
-        cur.close()
-        conn.close()
-        
-        return jsonify({'success': True}), 200
-    except Exception as e:
-        print(f"Mark ping read error: {e}")
-        return jsonify({'error': 'Database error'}), 500
 
 @csrf.exempt
 @app.route("/get_time", methods=["POST"])
