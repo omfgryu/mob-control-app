@@ -6,6 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Mob Control Players</title>
     <style>
         body {
@@ -951,172 +952,76 @@
                 const pingId = this.dataset.pingId;
                 const senderId = this.dataset.senderId;
                 
-                if (senderId) {
-                    // Ping back the sender
-                    fetch(`/ping/${senderId}`, { method: 'POST' })
-                        .then(response => {
-                            if (response.ok) {
-                                this.textContent = 'Sent!';
-                                this.style.background = '#4caf50';
-                                setTimeout(() => {
-                                    this.textContent = 'Ping Back';
-                                    this.style.background = '#00c853';
-                                }, 2000);
-                            } else {
-                                this.textContent = 'Error';
-                                this.style.background = '#f44336';
-                                setTimeout(() => {
-                                    this.textContent = 'Ping Back';
-                                    this.style.background = '#00c853';
-                                }, 2000);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            this.textContent = 'Failed';
-                            this.style.background = '#f44336';
-                            setTimeout(() => {
-                                this.textContent = 'Ping Back';
-                                this.style.background = '#00c853';
-                            }, 2000);
-                        });
-                }
-                
-                // Mark notification as read and remove it
-                if (pingId) {
-                    fetch(`/mark_ping_read/${pingId}`, { method: 'POST' })
-                        .then(response => {
-                            if (response.ok) {
-                                // Remove this notification item completely
-                                const notificationItem = this.closest('.notification-item');
-                                notificationItem.style.opacity = '0';
-                                notificationItem.style.transform = 'translateX(-100%)';
-                                
-                                setTimeout(() => {
-                                    notificationItem.remove();
-                                    updateNotificationCount();
-                                    checkIfEmpty();
-                                }, 300);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error marking as read:', error);
-                        });
-                }
-            });
-        });
+                // Add this at the top of your script section to get CSRF token
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-        // Clear all notifications functionality
-        const clearAllBtn = document.getElementById('clearAllBtn');
-        if (clearAllBtn) {
-            clearAllBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                if (confirm('Clear all ping notifications?')) {
-                    const notificationItems = document.querySelectorAll('.notification-item');
-                    const pingIds = Array.from(notificationItems).map(item => item.dataset.pingId);
-                    
-                    // Mark all as read
-                    Promise.all(pingIds.map(pingId => 
-                        fetch(`/mark_ping_read/${pingId}`, { method: 'POST' })
-                    )).then(() => {
-                        // Remove all notification items
-                        notificationItems.forEach(item => {
-                            item.style.opacity = '0';
-                            item.style.transform = 'translateX(-100%)';
-                        });
-                        
+// Function to make POST requests with CSRF token
+function postWithCSRF(url, data = {}) {
+    return fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify(data)
+    });
+}
+
+// Replace your existing ping button code with this:
+document.querySelectorAll('.ping-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const playerId = parseInt(this.dataset.playerId);
+        
+        // Double check - don't let users ping themselves
+        if (currentUserId && playerId === currentUserId) {
+            this.textContent = 'Cannot ping yourself';
+            this.style.background = '#f44336';
+            setTimeout(() => {
+                this.textContent = 'Ping';
+                this.style.background = '#00c853';
+            }, 2000);
+            return;
+        }
+        
+        postWithCSRF(`/ping/${playerId}`)
+            .then(response => {
+                if (response.ok) {
+                    this.textContent = 'Pinged!';
+                    this.style.background = '#4caf50';
+                    setTimeout(() => {
+                        this.textContent = 'Ping';
+                        this.style.background = '#00c853';
+                    }, 2000);
+                } else {
+                    // Handle different error codes
+                    return response.json().then(data => {
+                        this.textContent = data.error || 'Error';
+                        this.style.background = '#f44336';
                         setTimeout(() => {
-                            notificationItems.forEach(item => item.remove());
-                            updateNotificationCount();
-                            checkIfEmpty();
-                            clearAllBtn.style.display = 'none';
-                        }, 300);
+                            this.textContent = 'Ping';
+                            this.style.background = '#00c853';
+                        }, 2000);
                     });
                 }
-            });
-        }
-
-        // Function to update notification count
-        function updateNotificationCount() {
-            const notificationCount = document.getElementById('notificationCount');
-            const remainingNotifications = document.querySelectorAll('.notification-item').length;
-            
-            if (remainingNotifications === 0) {
-                notificationCount.style.display = 'none';
-            } else {
-                notificationCount.style.display = 'flex';
-                notificationCount.textContent = remainingNotifications;
-            }
-        }
-
-        // Function to check if notifications are empty and show message
-        function checkIfEmpty() {
-            const notificationList = document.getElementById('notificationList');
-            const remainingNotifications = document.querySelectorAll('.notification-item').length;
-            
-            if (remainingNotifications === 0) {
-                const noNotifications = document.createElement('div');
-                noNotifications.className = 'no-notifications';
-                noNotifications.id = 'noNotifications';
-                noNotifications.textContent = 'No ping notifications yet! 🌟';
-                notificationList.appendChild(noNotifications);
-                
-                // Hide clear all button
-                const clearAllBtn = document.getElementById('clearAllBtn');
-                if (clearAllBtn) clearAllBtn.style.display = 'none';
-            }
-        }
-    }
-
-    // FIXED: Regular ping functionality for table buttons
-    document.querySelectorAll('.ping-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const playerId = parseInt(this.dataset.playerId);
-            
-            // Double check - don't let users ping themselves
-            if (currentUserId && playerId === currentUserId) {
-                this.textContent = 'Cannot ping yourself';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                this.textContent = 'Failed';
                 this.style.background = '#f44336';
                 setTimeout(() => {
                     this.textContent = 'Ping';
                     this.style.background = '#00c853';
                 }, 2000);
-                return;
-            }
-            
-            fetch(`/ping/${playerId}`, { method: 'POST' })
-                .then(response => {
-                    if (response.ok) {
-                        this.textContent = 'Pinged!';
-                        this.style.background = '#4caf50';
-                        setTimeout(() => {
-                            this.textContent = 'Ping';
-                            this.style.background = '#00c853';
-                        }, 2000);
-                    } else {
-                        // Handle different error codes
-                        return response.json().then(data => {
-                            this.textContent = data.error || 'Error';
-                            this.style.background = '#f44336';
-                            setTimeout(() => {
-                                this.textContent = 'Ping';
-                                this.style.background = '#00c853';
-                            }, 2000);
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    this.textContent = 'Failed';
-                    this.style.background = '#f44336';
-                    setTimeout(() => {
-                        this.textContent = 'Ping';
-                        this.style.background = '#00c853';
-                    }, 2000);
-                });
-        });
+            });
     });
-</script>
+});
+
+// Also update the ping back functionality:
+// Replace: fetch(`/ping/${senderId}`, { method: 'POST' })
+// With: postWithCSRF(`/ping/${senderId}`)
+
+// And replace: fetch(`/mark_ping_read/${pingId}`, { method: 'POST' })  
+// With: postWithCSRF(`/mark_ping_read/${pingId}`)
 
 </body>
 </html>
