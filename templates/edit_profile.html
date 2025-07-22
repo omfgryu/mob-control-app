@@ -1,0 +1,107 @@
+<!-- edit_profile.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #00ffff;
+        }
+        form {
+            max-width: 500px;
+            margin: auto;
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            color: #ddd;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            background-color: #2c2c2c;
+            color: #f5f5f5;
+            border: 1px solid #444;
+            border-radius: 5px;
+        }
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 10px;
+            background-color: #00bcd4;
+            border: none;
+            color: #fff;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0097a7;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Edit Your Profile</h1>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+      <div style="background-color: #4caf50; color: white; padding: 10px; margin: 10px auto; max-width: 500px; border-radius: 5px; text-align: center;">
+        {{ message }} <br><strong>Click "Back to Players" to see your changes!</strong>
+      </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    <form action="{{ url_for('edit_profile') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <label for="username">In-Game Name</label>
+        <label for="username">In-Game Name</label>
+        <input type="text" id="username" name="name" value="{{ user.username }}" required>
+
+        <label for="country">Country</label>
+        <select id="country" name="country" required>
+            {% for country in countries %}
+            <option value="{{ country }}" {% if country == user.country %}selected{% endif %}>{{ country }}</option>
+            {% endfor %}
+        </select>
+
+
+        <label for="tier">Rank Tier</label>
+        <select id="tier" name="tier" required>
+            {% for tier in tiers %}
+            <option value="{{ tier }}" {% if tier == user.tier %}selected{% endif %}>{{ tier }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="social">Social Media (optional)</label>
+        <input type="text" id="social" name="social_links" value="{{ user.social_links }}">
+
+        <button type="submit">Save Changes</button>
+    </form>
+
+    <a class="back-link" href="{{ url_for('players') }}">&larr; Back to Players</a>
+</body>
+</html>

@@ -1,13 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- ✅ Added for responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mob Control Player Registration</title>
     <meta name="author" content="Amrit Sahai">
-<meta name="email" content="amritsahai117@gmail.com">
+    <meta name="email" content="amritsahai117@gmail.com">
 
     <style>
+        .password-strength {
+            width: 100%;
+            height: 10px;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        #strength-bar {
+            height: 100%;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .password-requirements {
+            font-size: 12px;
+            margin-top: 5px;
+        }
         body {
             background-color: #1a1d2e;
             color: #e0e0e0;
@@ -79,6 +98,21 @@
             background-color: #5ab0d6;
         }
 
+        .login-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .login-link a {
+            color: #6ec1e4;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
         #flash-messages {
             max-width: 400px;
             margin: 0 auto 15px auto;
@@ -138,7 +172,6 @@
             color: #00695c;
         }
 
-        /* ✅ Responsive adjustments for mobile, tablet, TV */
         @media screen and (max-width: 600px) {
             body {
                 align-items: flex-start;
@@ -189,7 +222,8 @@
     {% endwith %}
 
     <h2>Register Player</h2>
-    <form method="POST" autocomplete="off">
+    <form method="POST" action="{{ url_for('register') }}" autocomplete="off">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <label for="name">In-Game Name</label>
     <input type="text" name="name" required>
 
@@ -210,14 +244,27 @@
         {% endfor %}
     </select>
 
-    <!-- ✅ Added social_links input -->
     <label for="social_links">Social / Discord / IGN (optional)</label>
     <input type="text" name="social_links" placeholder="Enter social handle or IGN">
+
+    <label for="password">Create Password</label>
+<input type="password" name="password" id="password" required>
+<div class="password-requirements">
+    <p>Password must be at least 8 characters long</p>
+    <div class="password-strength">
+        <div id="strength-bar"></div>
+    </div>
+    <span id="strength-text">Password strength: Weak</span>
+</div>
 
     <input type="text" name="email_confirm" style="display:none" autocomplete="off">
 
     <button type="submit">Register</button>
-</form>
+    </form>
+
+    <div class="login-link">
+        <a href="{{ url_for('login') }}">Already registered? Login here</a>
+    </div>
 
 </div>
 
@@ -282,9 +329,31 @@
         toggle.innerText = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
     });
 </script>
+
 <p style="margin-top: 50px; font-size: 0.9em; color: gray; text-align: center;">
   🌟 Made with 💡 by <strong>Amrit Sahai</strong> — Contact: <a href="mailto:amritsahai117@gmail.com">amritsahai117@gmail.com</a>
 </p>
 
+<script>
+document.getElementById('password').addEventListener('input', function() {
+    const password = this.value;
+    const strengthBar = document.getElementById('strength-bar');
+    const strengthText = document.getElementById('strength-text');
+    
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    
+    const colors = ['#ff4757', '#ffa502', '#ffed4e', '#7bed9f', '#2ed573'];
+    const texts = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+    
+    strengthBar.style.width = (strength * 20) + '%';
+    strengthBar.style.backgroundColor = colors[strength] || '#ff4757';
+    strengthText.textContent = 'Password strength: ' + (texts[strength] || 'Very Weak');
+});
+</script>
 </body>
 </html>

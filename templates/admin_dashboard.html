@@ -1,0 +1,44 @@
+<!-- templates/admin_dashboard.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <style>
+        body { background: #111; color: #eee; font-family: sans-serif; text-align: center; }
+        table { margin: auto; border-collapse: collapse; width: 90%; background: #222; }
+        th, td { border: 1px solid #444; padding: 10px; }
+        th { background-color: #333; }
+        a { color: red; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <h2>👑 Admin Dashboard</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>In-Game Name</th>
+            <th>Region</th>
+            <th>Rank Tier</th>
+            <th>Social</th>
+            <th>Action</th>
+        </tr>
+        {% for user in users %}
+        <tr>
+            <td>{{ user[0] }}</td>
+            <td>{{ user[1] }}</td>
+            <td>{{ user[2] }}</td>
+            <td>{{ user[3] }}</td>
+            <td>{{ user[4] }}</td>
+            <td>{{ user[5] }}</td>
+            <td>
+                <form method="POST" action="/delete_profile" onsubmit="return confirm('Delete this profile?');">
+                    <input type="hidden" name="user_id" value="{{ user[0] }}">
+                    <input type="submit" value="❌ Delete" style="background:red;color:white;border:none;padding:5px 10px;">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mob Control Login</title>
+  <meta name="author" content="Amrit Sahai">
+  <meta name="email" content="amritsahai117@gmail.com">
+  <style>
+    body {
+      background-color: #1a1d2e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      transition: background-color 0.3s, color 0.3s;
+      margin: 0;
+      padding: 0;
+    }
+
+    .form-container {
+      background-color: #272b3f;
+      padding: 30px;
+      border-radius: 15px;
+      width: 400px;
+      max-width: 90vw;
+      box-shadow: 0 0 15px rgba(150, 200, 255, 0.15);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #9ecbff;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      margin-bottom: 15px;
+      background-color: #202437;
+      color: #ffffff;
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      background-color: #6ec1e4;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    button:hover {
+      background-color: #5ab0d6;
+    }
+
+    .toggle-theme {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      cursor: pointer;
+      font-size: 20px;
+      color: #6ec1e4;
+      z-index: 1000;
+    }
+
+    body.light-mode {
+      background-color: #f4f4f4;
+      color: #000;
+    }
+
+    .light-mode .form-container {
+      background-color: #ffffff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .light-mode input {
+      background-color: #f0f0f0;
+      color: #000;
+    }
+
+    .light-mode .toggle-theme {
+      color: #00695c;
+    }
+
+    .flash {
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      font-weight: bold;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .flash.success {
+      background-color: #b7f7cc;
+      color: #14532d;
+    }
+
+    .flash.error {
+      background-color: #fcbaba;
+      color: #7f1d1d;
+    }
+
+    @media screen and (max-width: 600px) {
+      body {
+        align-items: flex-start;
+        padding-top: 30px;
+        height: auto;
+      }
+
+      .form-container {
+        width: 90%;
+        padding: 20px;
+      }
+
+      .toggle-theme {
+        top: 15px;
+        right: 15px;
+        font-size: 22px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      input, button {
+        font-size: 14px;
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="toggle-theme" id="theme-toggle">🌙</div>
+
+<div class="form-container">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div id="flash-messages">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <h2>Login</h2>
+  <form method="POST" autocomplete="off">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <label for="name">In-Game Name</label>
+  <input type="text" name="name" required placeholder="Enter your registered name">
+
+  <label for="password">Password</label>
+  <input type="password" name="password" required>
+
+  <button type="submit">Login</button>
+</form>
+
+
+  <p style="text-align: center; margin-top: 20px; font-size: 0.9em;">
+    Don’t have an account? <a href="{{ url_for('register') }}" style="color: #9ecbff;">Register here</a>
+  </p>
+</div>
+
+<script>
+  const toggle = document.getElementById('theme-toggle');
+  toggle.addEventListener('click', () => {
+    document.body.classList.toggle('light-mode');
+    toggle.innerText = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+  });
+</script>
+
+</body>
+</html>
