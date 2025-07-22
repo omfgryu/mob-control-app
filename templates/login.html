@@ -117,6 +117,31 @@
       color: #7f1d1d;
     }
 
+    /* Remember me checkbox styling */
+    .remember-me {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 8px;
+    }
+
+    .remember-me input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+      transform: scale(1.2);
+    }
+
+    .remember-me label {
+      margin: 0;
+      font-size: 14px;
+      color: #9ecbff;
+      cursor: pointer;
+    }
+
+    .light-mode .remember-me label {
+      color: #00695c;
+    }
+
     @media screen and (max-width: 600px) {
       body {
         align-items: flex-start;
@@ -171,12 +196,18 @@
   <label for="password">Password</label>
   <input type="password" name="password" required>
 
+  <!-- Remember Me Checkbox -->
+  <div class="remember-me">
+    <input type="checkbox" id="remember_me" name="remember_me" value="1">
+    <label for="remember_me">Remember me for 1 week</label>
+  </div>
+
   <button type="submit">Login</button>
 </form>
 
 
   <p style="text-align: center; margin-top: 20px; font-size: 0.9em;">
-    Don’t have an account? <a href="{{ url_for('register') }}" style="color: #9ecbff;">Register here</a>
+    Don't have an account? <a href="{{ url_for('register') }}" style="color: #9ecbff;">Register here</a>
   </p>
 </div>
 

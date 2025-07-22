@@ -34,7 +34,7 @@ if not app.secret_key:
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = 1800  # 30 minutes
+app.config['PERMANENT_SESSION_LIFETIME'] = 604800  # 1 week for Remember Me
 
 # Move admin credentials to environment variables for security
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'omfgryu')
@@ -241,6 +241,7 @@ def login():
         
         name = sanitize_input(request.form.get("name", ""))
         password = sanitize_input(request.form.get("password", ""))
+        remember_me = request.form.get("remember_me")  # Get Remember Me checkbox
 
         # Check for admin login
         if name == ADMIN_USERNAME and password == ADMIN_PIN:
@@ -262,6 +263,10 @@ def login():
                     else:
                         admin_id = admin_user[0]
                     
+                    # Set permanent session if Remember Me is checked
+                    if remember_me:
+                        session.permanent = True
+                    
                     session["user_id"] = admin_id
                     session["user_name"] = ADMIN_USERNAME
                     session["role"] = "admin"
@@ -278,6 +283,10 @@ def login():
                 
                 user = c.fetchone()
                 if user and bcrypt.checkpw(password.encode('utf-8'), user[2].encode('utf-8')):
+                    # Set permanent session if Remember Me is checked
+                    if remember_me:
+                        session.permanent = True
+                    
                     session["user_id"] = user[0]
                     session["user_name"] = user[1]
                     session["role"] = "user"
