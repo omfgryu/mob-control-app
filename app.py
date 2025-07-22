@@ -458,7 +458,7 @@ def ping_player(player_id):
         # Get sender info from users table
         conn = sqlite3.connect('users.db')  # or players.db - whichever has user info
         cursor = conn.cursor()
-        cursor.execute("SELECT name, country FROM users WHERE id = ?", (sender_id,))
+        cursor.execute("SELECT username, country FROM users WHERE id = ?", (sender_id,))
         sender_info = cursor.fetchone()
         conn.close()
         
