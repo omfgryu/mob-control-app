@@ -450,6 +450,50 @@ def ping_player(player_id):
     # Don't let users ping themselves
     if sender_id == player_id:
         return jsonify({'error': 'Cannot ping yourself'}), 400
+
+    try:
+        import sqlite3
+        from datetime import datetime
+        
+        # Get sender info from users table
+        conn = sqlite3.connect('users.db')  # or players.db - whichever has user info
+        cursor = conn.cursor()
+        cursor.execute("SELECT name, country FROM users WHERE id = ?", (sender_id,))
+        sender_info = cursor.fetchone()
+        conn.close()
+        
+        if not sender_info:
+            return jsonify({'error': 'Sender not found'}), 400
+            
+        sender_name, sender_country = sender_info
+        
+        # Get sender's local time (you might need to adjust this based on your time logic)
+        sender_local_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Insert into pings table
+        conn = sqlite3.connect('players.db')  # assuming pings table is here
+        cursor = conn.cursor()
+        
+        # Insert into pings table
+        cursor.execute("""
+            INSERT INTO pings (sender_id, receiver_id, timestamp) 
+            VALUES (?, ?, ?)
+        """, (sender_id, player_id, datetime.now().isoformat()))
+        
+        # Insert into ping notification table
+        cursor.execute("""
+            INSERT INTO "ping notification" (sender_name, sender_country, sender_local_time, receiver_id, timestamp)
+            VALUES (?, ?, ?, ?, ?)
+        """, (sender_name, sender_country, sender_local_time, player_id, datetime.now().isoformat()))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Ping sent successfully!'}), 200
+        
+    except Exception as e:
+        print(f"Ping error: {e}")  # This will show in your Render logs
+        return jsonify({'error': 'Failed to send ping'}), 500
     
     try:
         conn = get_db_connection()
