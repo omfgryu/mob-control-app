@@ -41,6 +41,7 @@
             color: #f5f5f5;
             border: 1px solid #444;
             border-radius: 5px;
+            box-sizing: border-box;
         }
         button {
             margin-top: 20px;
@@ -62,6 +63,31 @@
             margin-top: 15px;
             color: #00ffff;
         }
+        /* ✅ GAME RANK STYLING */
+        .rank-info {
+            background-color: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .rank-info h3 {
+            color: #ffd700;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        .rank-info p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .rank-helper {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 5px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -77,7 +103,7 @@
         {% endwith %}
     <form action="{{ url_for('edit_profile') }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <label for="username">In-Game Name</label>
+        
         <label for="username">In-Game Name</label>
         <input type="text" id="username" name="name" value="{{ user.username }}" required>
 
@@ -88,13 +114,26 @@
             {% endfor %}
         </select>
 
-
         <label for="tier">Rank Tier</label>
         <select id="tier" name="tier" required>
             {% for tier in tiers %}
             <option value="{{ tier }}" {% if tier == user.tier %}selected{% endif %}>{{ tier }}</option>
             {% endfor %}
         </select>
+
+        <!-- ✅ GAME RANK FIELD ADDED -->
+        <div class="rank-info">
+            <h3>🏆 Game Rank System</h3>
+            <p>Set your current in-game rank. Lower numbers = higher rank position!</p>
+        </div>
+        
+        <label for="game_rank">Your Game Rank</label>
+        <input type="number" id="game_rank" name="game_rank" 
+               value="{% if user.game_rank and user.game_rank != 999999 %}{{ user.game_rank }}{% endif %}" 
+               min="1" max="999999" placeholder="Enter your rank (1-999999)">
+        <div class="rank-helper">
+            Examples: 1 = #1 player, 100 = #100 player, leave empty = Unranked
+        </div>
 
         <label for="social">Social Media (optional)</label>
         <input type="text" id="social" name="social_links" value="{{ user.social_links }}">
@@ -103,5 +142,20 @@
     </form>
 
     <a class="back-link" href="{{ url_for('players') }}">&larr; Back to Players</a>
+
+    <script>
+    // Form validation for game rank
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const rankInput = document.getElementById('game_rank');
+        const rankValue = parseInt(rankInput.value);
+        
+        if (rankInput.value && (rankValue < 1 || rankValue > 999999)) {
+            e.preventDefault();
+            alert('Game rank must be between 1 and 999,999, or leave empty for unranked');
+            rankInput.focus();
+            return false;
+        }
+    });
+    </script>
 </body>
 </html>
