@@ -40,7 +40,7 @@ CONNECTION_TIMEOUT = 60  # 1 minute idle timeout
 
 # ✅ HEALTH MONITORING SETTINGS
 HEALTH_CHECK_INTERVAL = 60
-MEMORY_WARNING_MB = 400
+MEMORY_WARNING_MB = 300
 CPU_WARNING_PERCENT = 70
 DB_WARNING_CONNECTIONS = 7
 
@@ -339,8 +339,10 @@ def check_system_health():
         return health_status
     
     try:
-        memory_info = psutil.virtual_memory()
-        memory_mb = memory_info.used / (1024 * 1024)
+        # Safer memory check - use process memory instead of system memory
+        import os
+        process = psutil.Process(os.getpid())
+        memory_mb = process.memory_info().rss / (1024 * 1024)  # Process memory only
         cpu_percent = psutil.cpu_percent(interval=0.1)
         
         health_status.update({
@@ -351,11 +353,12 @@ def check_system_health():
             'warnings': []
         })
         
-        if memory_mb > MEMORY_WARNING_MB:
+        # More reasonable thresholds
+        if memory_mb > 400:  # 400MB for process memory
             health_status['warnings'].append(f'High memory: {memory_mb:.1f}MB')
             print(f"⚠️ MEMORY WARNING: {memory_mb:.1f}MB")
             
-        if cpu_percent > CPU_WARNING_PERCENT:
+        if cpu_percent > 70:
             health_status['warnings'].append(f'High CPU: {cpu_percent:.1f}%')
             print(f"⚠️ CPU WARNING: {cpu_percent:.1f}%")
             
@@ -365,7 +368,7 @@ def check_system_health():
         
         if health_status['warnings']:
             health_status['status'] = 'warning'
-            if memory_mb > MEMORY_WARNING_MB or len(active_users) > 90:
+            if memory_mb > 450:  # Only trigger emergency at 450MB process memory
                 print("🚨 EMERGENCY CLEANUP TRIGGERED")
                 emergency_cleanup()
         else:
