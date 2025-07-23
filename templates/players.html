@@ -1,4 +1,4 @@
-<!-- Template Version: {{ template_version }} - HTTP-Only v2 (WebSockets REMOVED) -->
+<!-- Template Version: HTTP-Only v3 - ALL WebSocket Code REMOVED -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -347,7 +347,7 @@
     <div id="httpNotificationContent"></div>
 </div>
 
-<!-- ✅ CLEAN HTTP-ONLY JAVASCRIPT -->
+<!-- ✅ 100% WEBSOCKET-FREE JAVASCRIPT -->
 <script>
 // CSRF Token - MUST be at the top
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -360,7 +360,7 @@ const isAdmin = {{ 'true' if session.get('role') == 'admin' else 'false' }};
 
 // ✅ INITIALIZE EVERYTHING WHEN DOM IS READY
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔔 HTTP-only notification system loaded');
+    console.log('✅ Pure HTTP-only system loaded - No WebSockets!');
     
     // Apply admin styling if needed
     if (isAdmin) {
@@ -454,145 +454,6 @@ function toggleNotificationPopup() {
     
     if (popup.style.display === 'none' || popup.style.display === '') {
         popup.style.display = 'block';
-        setTimeout(() => {
-            document.addEventListener('click', closeOnClickOutside);
-        }, 100);
-    } else {
-        closeNotificationPopup();
-    }
-}
-
-function closeNotificationPopup() {
-    const popup = document.getElementById('notificationPopup');
-    if (!popup) return;
-    
-    popup.style.display = 'none';
-    document.removeEventListener('click', closeOnClickOutside);
-}
-
-function closeOnClickOutside(event) {
-    const popup = document.getElementById('notificationPopup');
-    const icon = document.getElementById('notificationIcon');
-    
-    if (!popup || !icon) return;
-    
-    if (!popup.contains(event.target) && !icon.contains(event.target)) {
-        closeNotificationPopup();
-    }
-}
-
-// ✅ FIXED PING BACK FUNCTION
-function pingBack(senderId, username, buttonEl) {
-    if (!buttonEl || !senderId || !username) return;
-    
-    // Change button state
-    buttonEl.textContent = 'Sending...';
-    buttonEl.style.background = '#ff9800';
-    buttonEl.disabled = true;
-    
-    // Create timeout to prevent stuck buttons
-    const timeoutId = setTimeout(() => {
-        resetPingBackButton(buttonEl);
-    }, 5000);
-    
-    // HTTP ping
-    fetch(`/ping/${senderId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        }
-    }).then(response => {
-        clearTimeout(timeoutId);
-        if (response.ok) {
-            buttonEl.textContent = 'Sent!';
-            buttonEl.style.background = '#4caf50';
-            showHttpNotification(`Ping sent to ${username}!`);
-        } else {
-            buttonEl.textContent = 'Error';
-            buttonEl.style.background = '#f44336';
-            showHttpNotification('Failed to send ping', 'error');
-        }
-        
-        setTimeout(() => {
-            resetPingBackButton(buttonEl);
-        }, 2000);
-    }).catch(error => {
-        clearTimeout(timeoutId);
-        buttonEl.textContent = 'Failed';
-        buttonEl.style.background = '#f44336';
-        showHttpNotification('Network error', 'error');
-        
-        setTimeout(() => {
-            resetPingBackButton(buttonEl);
-        }, 2000);
-    });
-    
-    // Mark as read
-    markPingAsRead(senderId);
-}
-
-function resetPingBackButton(buttonEl) {
-    if (!buttonEl) return;
-    buttonEl.textContent = 'Ping Back';
-    buttonEl.style.background = '#00c853';
-    buttonEl.disabled = false;
-}
-
-function markPingAsRead(senderId) {
-    if (!senderId) return;
-    
-    fetch(`/mark_ping_read/${senderId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        }
-    }).then(response => {
-        if (response.ok) {
-            const item = document.querySelector(`[data-sender-id="${senderId}"]`);
-            if (item) {
-                item.style.opacity = '0';
-                item.style.transform = 'translateX(-100%)';
-                setTimeout(() => {
-                    item.remove();
-                    updateNotificationCount();
-                    checkIfEmpty();
-                }, 300);
-            }
-        }
-    }).catch(error => {
-        console.error('Error marking ping as read:', error);
-    });
-}
-
-// ✅ CLEAR ALL FUNCTION
-function clearAllNotifications() {
-    if (!confirm('Clear all ping notifications?')) return;
-    
-    const items = document.querySelectorAll('.notification-item');
-    if (items.length === 0) return;
-    
-    const senderIds = Array.from(items).map(item => item.dataset.senderId).filter(id => id);
-    
-    if (senderIds.length === 0) return;
-    
-    // Mark all as read
-    Promise.all(senderIds.map(senderId => 
-        fetch(`/mark_ping_read/${senderId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            }
-        })
-    )).then(() => {
-        // Remove all items with animation
-        items.forEach(item => {
-            item.style.opacity = '0';
-            item.style.transform = 'translateX(-100%)';
-        });
-        
         setTimeout(() => {
             items.forEach(item => {
                 if (item.parentNode) {
@@ -826,3 +687,143 @@ function initializePingButtons() {
 
 </body>
 </html>
+            document.addEventListener('click', closeOnClickOutside);
+        }, 100);
+    } else {
+        closeNotificationPopup();
+    }
+}
+
+function closeNotificationPopup() {
+    const popup = document.getElementById('notificationPopup');
+    if (!popup) return;
+    
+    popup.style.display = 'none';
+    document.removeEventListener('click', closeOnClickOutside);
+}
+
+function closeOnClickOutside(event) {
+    const popup = document.getElementById('notificationPopup');
+    const icon = document.getElementById('notificationIcon');
+    
+    if (!popup || !icon) return;
+    
+    if (!popup.contains(event.target) && !icon.contains(event.target)) {
+        closeNotificationPopup();
+    }
+}
+
+// ✅ FIXED PING BACK FUNCTION
+function pingBack(senderId, username, buttonEl) {
+    if (!buttonEl || !senderId || !username) return;
+    
+    // Change button state
+    buttonEl.textContent = 'Sending...';
+    buttonEl.style.background = '#ff9800';
+    buttonEl.disabled = true;
+    
+    // Create timeout to prevent stuck buttons
+    const timeoutId = setTimeout(() => {
+        resetPingBackButton(buttonEl);
+    }, 5000);
+    
+    // HTTP ping
+    fetch(`/ping/${senderId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    }).then(response => response.json())
+    .then(data => {
+        clearTimeout(timeoutId);
+        if (data.success) {
+            buttonEl.textContent = 'Sent!';
+            buttonEl.style.background = '#4caf50';
+            showHttpNotification(`Ping sent to ${username}!`);
+        } else {
+            buttonEl.textContent = 'Error';
+            buttonEl.style.background = '#f44336';
+            showHttpNotification(data.error || 'Failed to send ping', 'error');
+        }
+        
+        setTimeout(() => {
+            resetPingBackButton(buttonEl);
+        }, 2000);
+    }).catch(error => {
+        clearTimeout(timeoutId);
+        buttonEl.textContent = 'Failed';
+        buttonEl.style.background = '#f44336';
+        showHttpNotification('Network error', 'error');
+        
+        setTimeout(() => {
+            resetPingBackButton(buttonEl);
+        }, 2000);
+    });
+    
+    // Mark as read
+    markPingAsRead(senderId);
+}
+
+function resetPingBackButton(buttonEl) {
+    if (!buttonEl) return;
+    buttonEl.textContent = 'Ping Back';
+    buttonEl.style.background = '#00c853';
+    buttonEl.disabled = false;
+}
+
+function markPingAsRead(senderId) {
+    if (!senderId) return;
+    
+    fetch(`/mark_ping_read/${senderId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    }).then(response => {
+        if (response.ok) {
+            const item = document.querySelector(`[data-sender-id="${senderId}"]`);
+            if (item) {
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(-100%)';
+                setTimeout(() => {
+                    item.remove();
+                    updateNotificationCount();
+                    checkIfEmpty();
+                }, 300);
+            }
+        }
+    }).catch(error => {
+        console.error('Error marking ping as read:', error);
+    });
+}
+
+// ✅ CLEAR ALL FUNCTION
+function clearAllNotifications() {
+    if (!confirm('Clear all ping notifications?')) return;
+    
+    const items = document.querySelectorAll('.notification-item');
+    if (items.length === 0) return;
+    
+    const senderIds = Array.from(items).map(item => item.dataset.senderId).filter(id => id);
+    
+    if (senderIds.length === 0) return;
+    
+    // Mark all as read
+    Promise.all(senderIds.map(senderId => 
+        fetch(`/mark_ping_read/${senderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        })
+    )).then(() => {
+        // Remove all items with animation
+        items.forEach(item => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateX(-100%)';
+        });
+        
+        setTimeout(() => {
