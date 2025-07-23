@@ -114,6 +114,7 @@
     font-size: 20px;
     transition: transform 0.2s;
 " id="notificationIcon" onclick="toggleNotificationPopup()" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+    📡>
     📡
     <!-- Notification count badge -->
     {% set total_pings = user_pings|sum(attribute='ping_count') if user_pings else 0 %}
@@ -432,17 +433,27 @@ function filterTable() {
     const tierValue = document.getElementById('tierFilter')?.value || '';
     const rows = document.querySelectorAll('#playerTable tr');
 
-    rows.forEach(row => {
-        if (row.cells && row.cells.length >= 3) {
-            const name = row.cells[0].textContent.toLowerCase();
-            const country = row.cells[1].textContent;
-            const tier = row.cells[2].textContent;
+    console.log('Filtering with:', { nameValue, countryValue, tierValue }); // Debug log
 
-            const matchesName = name.includes(nameValue);
+    rows.forEach(row => {
+        if (row.cells && row.cells.length >= 6) { // Updated for new column count
+            // Get the actual text content, removing extra whitespace and crown symbols
+            const nameCell = row.cells[0].textContent.replace(/👑/g, '').trim().toLowerCase();
+            const country = row.cells[1].textContent.trim();
+            const tier = row.cells[2].textContent.trim();
+
+            console.log('Checking row:', { nameCell, country, tier }); // Debug log
+
+            const matchesName = nameValue === '' || nameCell.includes(nameValue);
             const matchesCountry = countryValue === '' || country === countryValue;
             const matchesTier = tierValue === '' || tier === tierValue;
 
-            row.style.display = matchesName && matchesCountry && matchesTier ? '' : 'none';
+            const shouldShow = matchesName && matchesCountry && matchesTier;
+            row.style.display = shouldShow ? '' : 'none';
+            
+            if (nameValue && matchesName) {
+                console.log('Match found:', nameCell); // Debug log
+            }
         }
     });
 }
@@ -598,15 +609,20 @@ function cancelRankEdit(playerId, originalRank) {
     `;
 }
 
-// ✅ PING BUTTONS - CLEAN HTTP-ONLY VERSION
+// ✅ PING BUTTONS - FIXED HTTP-ONLY VERSION
 function initializePingButtons() {
+    console.log('🔄 Initializing ping buttons...');
+    
     // Remove existing listeners to prevent duplicates
     document.querySelectorAll('.ping-btn').forEach(btn => {
-        btn.replaceWith(btn.cloneNode(true));
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
     });
     
     // Add fresh event listeners
     document.querySelectorAll('.ping-btn').forEach(btn => {
+        console.log('✅ Adding ping listener to button:', btn.dataset.playerName);
+        
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -614,8 +630,10 @@ function initializePingButtons() {
             const playerId = parseInt(this.dataset.playerId);
             const playerName = this.dataset.playerName;
             
+            console.log('🔔 Ping button clicked:', { playerId, playerName });
+            
             if (!playerId || !playerName) {
-                console.error('Missing player data');
+                console.error('❌ Missing player data:', { playerId, playerName });
                 return;
             }
             
@@ -635,8 +653,11 @@ function initializePingButtons() {
             this.style.background = '#ff9800';
             this.disabled = true;
             
+            console.log('📡 Sending ping to player:', playerId);
+            
             // Create timeout to prevent stuck buttons
             const timeoutId = setTimeout(() => {
+                console.log('⏰ Ping timeout, resetting button');
                 this.textContent = 'Ping';
                 this.style.background = '#00c853';
                 this.disabled = false;
@@ -649,9 +670,14 @@ function initializePingButtons() {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrfToken
                 }
-            }).then(response => response.json())
+            }).then(response => {
+                console.log('📥 Ping response status:', response.status);
+                return response.json();
+            })
             .then(data => {
                 clearTimeout(timeoutId);
+                console.log('📋 Ping response data:', data);
+                
                 if (data.success) {
                     this.textContent = 'Sent!';
                     this.style.background = '#4caf50';
@@ -669,7 +695,7 @@ function initializePingButtons() {
                 }, 2000);
             }).catch(error => {
                 clearTimeout(timeoutId);
-                console.error('Ping error:', error);
+                console.error('❌ Ping error:', error);
                 this.textContent = 'Failed';
                 this.style.background = '#f44336';
                 showHttpNotification('Network error', 'error');
@@ -682,6 +708,9 @@ function initializePingButtons() {
             });
         });
     });
+    
+    const buttonCount = document.querySelectorAll('.ping-btn').length;
+    console.log(`✅ Initialized ${buttonCount} ping buttons`);
 }
 </script>
 
