@@ -1,4 +1,4 @@
-<!-- Template Version: {{ template_version }} - Real-time WebSocket v1 -->
+<!-- Template Version: {{ template_version }} - HTTP-Only v2 (WebSockets REMOVED) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,8 +16,11 @@
         /* ✅ FIXED TABLE STYLING */
         th,td{padding:12px;border-bottom:1px solid rgba(150,200,255,0.1);text-align:center}body.light-mode th,body.light-mode td{border-bottom:1px solid rgba(0,0,0,0.1)}th{background-color:#202437;color:#9ecbff;font-weight:bold}body.light-mode th{background-color:#f0f0f0;color:#00695c}
         
-        /* ✅ REAL-TIME FEATURES STYLING */
-        .online-indicator{display:inline-block;width:10px;height:10px;border-radius:50%;background-color:#00c853;margin-left:8px;animation:pulse-online 2s infinite}.offline-indicator{display:inline-block;width:10px;height:10px;border-radius:50%;background-color:#666;margin-left:8px}@keyframes pulse-online{0%{opacity:1}50%{opacity:0.5}100%{opacity:1}}.realtime-notification{position:fixed;top:80px;right:20px;background:linear-gradient(135deg,#00c853,#4caf50);color:white;padding:15px 20px;border-radius:10px;box-shadow:0 4px 20px rgba(0,200,83,0.4);z-index:10000;transform:translateX(300px);opacity:0;transition:all 0.3s ease}.realtime-notification.show{transform:translateX(0);opacity:1}.realtime-notification.hide{transform:translateX(300px);opacity:0}.notification-close{position:absolute;top:5px;right:10px;background:none;border:none;color:white;font-size:16px;cursor:pointer;opacity:0.8}.notification-close:hover{opacity:1}.connection-status{position:fixed;bottom:20px;right:20px;padding:8px 12px;border-radius:20px;font-size:12px;font-weight:bold;z-index:1000;transition:all 0.3s ease}.connected{background-color:#00c853;color:white}.disconnected{background-color:#f44336;color:white}.connecting{background-color:#ff9800;color:white}.active-users-counter{background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:5px 12px;border-radius:15px;font-size:12px;font-weight:bold;margin-left:15px}.ping-btn.sending{background-color:#ff9800!important;pointer-events:none}.ping-btn.sent{background-color:#4caf50!important}.ping-btn.error{background-color:#f44336!important}
+        /* ✅ GAME RANK STYLING */
+        .game-rank-cell{position:relative;font-weight:bold;color:#ffd700;text-shadow:0 0 5px rgba(255,215,0,0.3)}.rank-edit-btn{background:#6ec1e4;color:white;border:none;padding:2px 6px;border-radius:4px;font-size:10px;cursor:pointer;margin-left:5px}.rank-input{background:#202437;color:white;border:1px solid #6ec1e4;padding:2px 5px;border-radius:4px;width:60px;font-size:12px}body.light-mode .rank-input{background:#f0f0f0;color:#000}
+        
+        /* ✅ HTTP NOTIFICATION SYSTEM */
+        .http-notification{position:fixed;top:80px;right:20px;background:linear-gradient(135deg,#00c853,#4caf50);color:white;padding:15px 20px;border-radius:10px;box-shadow:0 4px 20px rgba(0,200,83,0.4);z-index:10000;transform:translateX(300px);opacity:0;transition:all 0.3s ease}.http-notification.show{transform:translateX(0);opacity:1}.http-notification.hide{transform:translateX(300px);opacity:0}.notification-close{position:absolute;top:5px;right:10px;background:none;border:none;color:white;font-size:16px;cursor:pointer;opacity:0.8}.notification-close:hover{opacity:1}.ping-btn.sending{background-color:#ff9800!important;pointer-events:none}.ping-btn.sent{background-color:#4caf50!important}.ping-btn.error{background-color:#f44336!important}
 
         /* ✅ MOBILE RESPONSIVE */
         @media screen and (max-width:768px){.search-container{flex-direction:column;margin:10px;padding:15px}header{flex-direction:column;gap:10px;text-align:center}.header-left{flex-direction:column;gap:10px}.actions{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}table{font-size:12px}.actions-cell{flex-direction:column;gap:5px}.toggle-theme{margin-left:0;font-size:22px}}
@@ -29,10 +32,6 @@
     <div class="header-left">
         <h1 id="main-title">Mob Control Global Player List</h1>
         <div class="toggle-theme" id="theme-toggle">🌙</div>
-        <!-- ✅ Real-time active users counter -->
-        <div class="active-users-counter" id="activeUsersCounter">
-            🟢 <span id="activeCount">0</span> online
-        </div>
     </div>
     <div class="actions">
         <!-- Debug info - Remove this in production -->
@@ -95,7 +94,7 @@
     </div>
 </div>
 
-<!-- ✅ BULLETPROOF NOTIFICATION SYSTEM - FIXED Z-INDEX -->
+<!-- ✅ HTTP-BASED NOTIFICATION SYSTEM -->
 {% if session.get('user_id') %}
 <div style="
     position: fixed;
@@ -279,9 +278,9 @@
                 <th>In-Game Name</th>
                 <th>Region</th>
                 <th>Tier</th>
+                <th>🏆 Game Rank</th>
                 <th>Local Time</th>
                 <th>Social Links</th>
-                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -297,13 +296,22 @@
                 </td>
                 <td>{{ player['country'] }}</td>
                 <td>{{ player['tier'] }}</td>
+                <td class="game-rank-cell">
+                    <span class="rank-display" data-player-id="{{ player['id'] }}">
+                        {% if player['game_rank'] == 999999 %}
+                            Unranked
+                        {% else %}
+                            #{{ player['game_rank'] }}
+                        {% endif %}
+                    </span>
+                    {% if session.get('user_id') == player['id'] %}
+                        <button class="rank-edit-btn" onclick="editRank({{ player['id'] }}, {{ player['game_rank'] }})">Edit</button>
+                    {% endif %}
+                </td>
                 <td class="local-time" data-country="{{ player['country'] }}">
                     {{ player['local_time'] if player['local_time'] != 'N/A' else 'Calculating...' }}
                 </td>
                 <td>{{ player['social_links'] if player['social_links'] else 'N/A' }}</td>
-                <td class="status-cell" data-player-id="{{ player['id'] }}">
-                    <span class="offline-indicator" title="Offline"></span>
-                </td>
                 <td class="actions-cell">
                     {% if session.get('user_id') == player['id'] %}
                         <a href="{{ url_for('edit_profile') }}" class="edit-btn {% if session.get('role') == 'admin' %}admin-edit-btn{% endif %}">
@@ -333,23 +341,14 @@
     </table>
 </div>
 
-<!-- ✅ REAL-TIME NOTIFICATION POPUP -->
-<div id="realtimeNotification" class="realtime-notification">
-    <button class="notification-close" onclick="closeRealtimeNotification()">×</button>
-    <div id="notificationContent"></div>
+<!-- ✅ HTTP NOTIFICATION POPUP -->
+<div id="httpNotification" class="http-notification">
+    <button class="notification-close" onclick="closeHttpNotification()">×</button>
+    <div id="httpNotificationContent"></div>
 </div>
 
-<!-- ✅ CONNECTION STATUS INDICATOR -->
-<div id="connectionStatus" class="connection-status connecting">Connecting...</div>
-
-<!-- ✅ Load SocketIO from CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-
-<!-- ✅ BULLETPROOF JAVASCRIPT - ALL ISSUES FIXED -->
+<!-- ✅ CLEAN HTTP-ONLY JAVASCRIPT -->
 <script>
-// ✅ WEBSOCKET CONNECTION
-const socket = io();
-
 // CSRF Token - MUST be at the top
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -361,7 +360,7 @@ const isAdmin = {{ 'true' if session.get('role') == 'admin' else 'false' }};
 
 // ✅ INITIALIZE EVERYTHING WHEN DOM IS READY
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔔 Bulletproof notification system loaded');
+    console.log('🔔 HTTP-only notification system loaded');
     
     // Apply admin styling if needed
     if (isAdmin) {
@@ -389,117 +388,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (countryFilter) countryFilter.addEventListener('change', filterTable);
     if (tierFilter) tierFilter.addEventListener('change', filterTable);
     
-    // ✅ INITIALIZE PING BUTTONS - FIXED EVENT LISTENERS
+    // ✅ INITIALIZE PING BUTTONS
     initializePingButtons();
 });
 
-// ✅ WEBSOCKET EVENT HANDLERS
-socket.on('connect', function() {
-    console.log('✅ Connected to real-time server');
-    updateConnectionStatus('connected');
-    socket.emit('get_active_users');
-});
-
-socket.on('disconnect', function() {
-    console.log('❌ Disconnected from real-time server');
-    updateConnectionStatus('disconnected');
-    document.querySelectorAll('.online-indicator').forEach(indicator => {
-        indicator.className = 'offline-indicator';
-        indicator.title = 'Offline';
-    });
-    updateActiveUsersCount(0);
-});
-
-socket.on('connect_error', function() {
-    console.log('⚠️ Connection error');
-    updateConnectionStatus('connecting');
-});
-
-socket.on('new_ping_notification', function(data) {
-    console.log('📡 New ping received:', data);
-    showRealtimeNotification(data);
-    updateNotificationBadge();
-});
-
-socket.on('user_status_update', function(data) {
-    console.log('👤 User status update:', data);
-    updateUserStatus(data.user_id, data.status);
-});
-
-socket.on('active_users_list', function(data) {
-    console.log('📊 Active users:', data.active_users.length);
-    updateActiveUsersCount(data.active_users.length);
-    data.active_users.forEach(user => {
-        updateUserStatus(user.user_id, 'online');
-    });
-});
-
-socket.on('ping_success', function(data) {
-    console.log('✅ Ping sent successfully:', data.message);
-});
-
-socket.on('ping_error', function(data) {
-    console.log('❌ Ping error:', data.error);
-    showRealtimeNotification({
-        sender_name: 'System',
-        message: data.error,
-        timestamp: new Date().toISOString()
-    }, 'error');
-});
-
 // ✅ UTILITY FUNCTIONS
-function updateConnectionStatus(status) {
-    const statusEl = document.getElementById('connectionStatus');
-    if (!statusEl) return;
-    
-    statusEl.className = `connection-status ${status}`;
-    switch(status) {
-        case 'connected':
-            statusEl.textContent = '🟢 Connected';
-            break;
-        case 'disconnected':
-            statusEl.textContent = '🔴 Disconnected';
-            break;
-        case 'connecting':
-            statusEl.textContent = '🟡 Connecting...';
-            break;
-    }
-}
-
-function updateActiveUsersCount(count) {
-    const counterEl = document.getElementById('activeCount');
-    if (counterEl) {
-        counterEl.textContent = count;
-    }
-}
-
-function updateUserStatus(userId, status) {
-    const statusCell = document.querySelector(`[data-player-id="${userId}"] .status-cell`);
-    if (statusCell) {
-        const indicator = statusCell.querySelector('.online-indicator, .offline-indicator');
-        if (indicator) {
-            if (status === 'online') {
-                indicator.className = 'online-indicator';
-                indicator.title = 'Online';
-            } else {
-                indicator.className = 'offline-indicator';
-                indicator.title = 'Offline';
-            }
-        }
-    }
-}
-
-function showRealtimeNotification(data, type = 'success') {
-    const notification = document.getElementById('realtimeNotification');
-    const content = document.getElementById('notificationContent');
+function showHttpNotification(message, type = 'success') {
+    const notification = document.getElementById('httpNotification');
+    const content = document.getElementById('httpNotificationContent');
     
     if (!notification || !content) return;
     
-    content.innerHTML = `
-        <strong>${data.sender_name}</strong><br>
-        ${data.message}
-        <br><small>${new Date(data.timestamp).toLocaleTimeString()}</small>
-    `;
+    content.innerHTML = message;
     
     if (type === 'error') {
         notification.style.background = 'linear-gradient(135deg, #f44336, #d32f2f)';
@@ -510,12 +410,12 @@ function showRealtimeNotification(data, type = 'success') {
     notification.classList.add('show');
     
     setTimeout(() => {
-        closeRealtimeNotification();
-    }, 5000);
+        closeHttpNotification();
+    }, 4000);
 }
 
-function closeRealtimeNotification() {
-    const notification = document.getElementById('realtimeNotification');
+function closeHttpNotification() {
+    const notification = document.getElementById('httpNotification');
     if (!notification) return;
     
     notification.classList.remove('show');
@@ -524,10 +424,6 @@ function closeRealtimeNotification() {
     setTimeout(() => {
         notification.classList.remove('hide');
     }, 300);
-}
-
-function updateNotificationBadge() {
-    console.log('📱 Updating notification badge');
 }
 
 function filterTable() {
@@ -551,7 +447,7 @@ function filterTable() {
     });
 }
 
-// ✅ NOTIFICATION SYSTEM FUNCTIONS - COMPLETELY FIXED
+// ✅ NOTIFICATION SYSTEM FUNCTIONS
 function toggleNotificationPopup() {
     const popup = document.getElementById('notificationPopup');
     if (!popup) return;
@@ -585,7 +481,7 @@ function closeOnClickOutside(event) {
     }
 }
 
-// ✅ FIXED PING BACK FUNCTION - NO MORE STUCK "SENDING..."
+// ✅ FIXED PING BACK FUNCTION
 function pingBack(senderId, username, buttonEl) {
     if (!buttonEl || !senderId || !username) return;
     
@@ -599,54 +495,38 @@ function pingBack(senderId, username, buttonEl) {
         resetPingBackButton(buttonEl);
     }, 5000);
     
-    // Send ping back via WebSocket if available, otherwise use HTTP
-    if (typeof socket !== 'undefined' && socket.connected) {
-        socket.emit('ping_user', {
-            receiver_id: senderId,
-            receiver_name: username
-        });
-        
-        // Success feedback
-        setTimeout(() => {
-            clearTimeout(timeoutId);
+    // HTTP ping
+    fetch(`/ping/${senderId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    }).then(response => {
+        clearTimeout(timeoutId);
+        if (response.ok) {
             buttonEl.textContent = 'Sent!';
             buttonEl.style.background = '#4caf50';
-            
-            setTimeout(() => {
-                resetPingBackButton(buttonEl);
-            }, 2000);
-        }, 1000);
-    } else {
-        // HTTP fallback
-        fetch(`/ping/${senderId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            }
-        }).then(response => {
-            clearTimeout(timeoutId);
-            if (response.ok) {
-                buttonEl.textContent = 'Sent!';
-                buttonEl.style.background = '#4caf50';
-            } else {
-                buttonEl.textContent = 'Error';
-                buttonEl.style.background = '#f44336';
-            }
-            
-            setTimeout(() => {
-                resetPingBackButton(buttonEl);
-            }, 2000);
-        }).catch(error => {
-            clearTimeout(timeoutId);
-            buttonEl.textContent = 'Failed';
+            showHttpNotification(`Ping sent to ${username}!`);
+        } else {
+            buttonEl.textContent = 'Error';
             buttonEl.style.background = '#f44336';
-            
-            setTimeout(() => {
-                resetPingBackButton(buttonEl);
-            }, 2000);
-        });
-    }
+            showHttpNotification('Failed to send ping', 'error');
+        }
+        
+        setTimeout(() => {
+            resetPingBackButton(buttonEl);
+        }, 2000);
+    }).catch(error => {
+        clearTimeout(timeoutId);
+        buttonEl.textContent = 'Failed';
+        buttonEl.style.background = '#f44336';
+        showHttpNotification('Network error', 'error');
+        
+        setTimeout(() => {
+            resetPingBackButton(buttonEl);
+        }, 2000);
+    });
     
     // Mark as read
     markPingAsRead(senderId);
@@ -686,7 +566,7 @@ function markPingAsRead(senderId) {
     });
 }
 
-// ✅ FIXED CLEAR ALL FUNCTION
+// ✅ CLEAR ALL FUNCTION
 function clearAllNotifications() {
     if (!confirm('Clear all ping notifications?')) return;
     
@@ -768,7 +648,96 @@ function checkIfEmpty() {
     }
 }
 
-// ✅ FIXED PING BUTTONS - NO MORE EVENT LISTENER ISSUES
+// ✅ GAME RANK EDITING FUNCTIONS
+function editRank(playerId, currentRank) {
+    const rankDisplay = document.querySelector(`[data-player-id="${playerId}"]`);
+    if (!rankDisplay) return;
+    
+    const displayRank = currentRank === 999999 ? '' : currentRank;
+    
+    rankDisplay.innerHTML = `
+        <input type="number" class="rank-input" id="rankInput${playerId}" 
+               value="${displayRank}" min="1" max="999999" placeholder="Enter rank">
+        <button onclick="saveRank(${playerId})" style="background:#4caf50;color:white;border:none;padding:2px 6px;border-radius:4px;font-size:10px;cursor:pointer;margin-left:3px;">Save</button>
+        <button onclick="cancelRankEdit(${playerId}, ${currentRank})" style="background:#f44336;color:white;border:none;padding:2px 6px;border-radius:4px;font-size:10px;cursor:pointer;margin-left:3px;">Cancel</button>
+    `;
+    
+    const input = document.getElementById(`rankInput${playerId}`);
+    if (input) {
+        input.focus();
+        input.select();
+        
+        // Allow Enter to save
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                saveRank(playerId);
+            } else if (e.key === 'Escape') {
+                cancelRankEdit(playerId, currentRank);
+            }
+        });
+    }
+}
+
+function saveRank(playerId) {
+    const input = document.getElementById(`rankInput${playerId}`);
+    if (!input) return;
+    
+    const newRank = parseInt(input.value) || 999999;
+    
+    if (newRank < 1 || newRank > 999999) {
+        showHttpNotification('Rank must be between 1 and 999,999', 'error');
+        return;
+    }
+    
+    // Show saving state
+    input.disabled = true;
+    input.style.opacity = '0.5';
+    
+    fetch('/update_rank', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            rank: newRank
+        })
+    }).then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update display
+            const rankDisplay = document.querySelector(`[data-player-id="${playerId}"]`);
+            if (rankDisplay) {
+                const displayText = newRank === 999999 ? 'Unranked' : `#${newRank}`;
+                rankDisplay.innerHTML = `
+                    ${displayText}
+                    <button class="rank-edit-btn" onclick="editRank(${playerId}, ${newRank})">Edit</button>
+                `;
+            }
+            showHttpNotification('Rank updated successfully!');
+        } else {
+            showHttpNotification(data.error || 'Failed to update rank', 'error');
+            cancelRankEdit(playerId, newRank);
+        }
+    }).catch(error => {
+        console.error('Rank update error:', error);
+        showHttpNotification('Network error while updating rank', 'error');
+        cancelRankEdit(playerId, newRank);
+    });
+}
+
+function cancelRankEdit(playerId, originalRank) {
+    const rankDisplay = document.querySelector(`[data-player-id="${playerId}"]`);
+    if (!rankDisplay) return;
+    
+    const displayText = originalRank === 999999 ? 'Unranked' : `#${originalRank}`;
+    rankDisplay.innerHTML = `
+        ${displayText}
+        <button class="rank-edit-btn" onclick="editRank(${playerId}, ${originalRank})">Edit</button>
+    `;
+}
+
+// ✅ PING BUTTONS - CLEAN HTTP-ONLY VERSION
 function initializePingButtons() {
     // Remove existing listeners to prevent duplicates
     document.querySelectorAll('.ping-btn').forEach(btn => {
@@ -812,60 +781,44 @@ function initializePingButtons() {
                 this.disabled = false;
             }, 5000);
             
-            // Send real-time ping via WebSocket
-            if (typeof socket !== 'undefined' && socket.connected) {
-                socket.emit('ping_user', {
-                    receiver_id: playerId,
-                    receiver_name: playerName
-                });
-                
-                // Success feedback
-                setTimeout(() => {
-                    clearTimeout(timeoutId);
+            // Send HTTP ping
+            fetch(`/ping/${playerId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            }).then(response => response.json())
+            .then(data => {
+                clearTimeout(timeoutId);
+                if (data.success) {
                     this.textContent = 'Sent!';
                     this.style.background = '#4caf50';
-                    
-                    setTimeout(() => {
-                        this.textContent = 'Ping';
-                        this.style.background = '#00c853';
-                        this.disabled = false;
-                    }, 2000);
-                }, 1000);
-            } else {
-                // HTTP fallback
-                fetch(`/ping/${playerId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    }
-                }).then(response => {
-                    clearTimeout(timeoutId);
-                    if (response.ok) {
-                        this.textContent = 'Sent!';
-                        this.style.background = '#4caf50';
-                    } else {
-                        this.textContent = 'Error';
-                        this.style.background = '#f44336';
-                    }
-                    
-                    setTimeout(() => {
-                        this.textContent = 'Ping';
-                        this.style.background = '#00c853';
-                        this.disabled = false;
-                    }, 2000);
-                }).catch(error => {
-                    clearTimeout(timeoutId);
-                    this.textContent = 'Failed';
+                    showHttpNotification(`Ping sent to ${playerName}!`);
+                } else {
+                    this.textContent = 'Error';
                     this.style.background = '#f44336';
-                    
-                    setTimeout(() => {
-                        this.textContent = 'Ping';
-                        this.style.background = '#00c853';
-                        this.disabled = false;
-                    }, 2000);
-                });
-            }
+                    showHttpNotification(data.error || 'Failed to send ping', 'error');
+                }
+                
+                setTimeout(() => {
+                    this.textContent = 'Ping';
+                    this.style.background = '#00c853';
+                    this.disabled = false;
+                }, 2000);
+            }).catch(error => {
+                clearTimeout(timeoutId);
+                console.error('Ping error:', error);
+                this.textContent = 'Failed';
+                this.style.background = '#f44336';
+                showHttpNotification('Network error', 'error');
+                
+                setTimeout(() => {
+                    this.textContent = 'Ping';
+                    this.style.background = '#00c853';
+                    this.disabled = false;
+                }, 2000);
+            });
         });
     });
 }
