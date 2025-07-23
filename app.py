@@ -1,6 +1,7 @@
 # app.py
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask import session, Flask, render_template, request, jsonify, redirect, url_for, flash, g, send_from_directory, make_response
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from datetime import datetime, timezone, timedelta
 import pytz
 from geopy.geocoders import Nominatim
@@ -20,6 +21,12 @@ import hashlib
 
 app = Flask(__name__)
 csrf = CSRFProtect(app)
+
+# ✅ REAL-TIME WEBSOCKET SETUP
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+# Store active users for real-time features
+active_users = {}  # {user_id: {'username': 'name', 'sid': 'socket_id', 'last_seen': timestamp}}
 
 # ✅ FRONTEND CACHING - Cache static files for 1 year, but allow updates
 @app.route('/static/<path:filename>')
@@ -189,6 +196,127 @@ def cache_bust_static(filename):
 @app.context_processor
 def utility_processor():
     return dict(cache_bust=cache_bust_static)
+
+# ✅ REAL-TIME WEBSOCKET EVENT HANDLERS
+
+@socketio.on('connect')
+def handle_connect():
+    """Handle user connecting to WebSocket"""
+    user_id = session.get('user_id')
+    username = session.get('user_name')
+    
+    if user_id and username:
+        # Add user to active users
+        active_users[user_id] = {
+            'username': username,
+            'sid': request.sid,
+            'last_seen': time.time()
+        }
+        
+        # Join user to their personal room for notifications
+        join_room(f"user_{user_id}")
+        
+        # Broadcast user came online to all users
+        socketio.emit('user_status_update', {
+            'user_id': user_id,
+            'username': username,
+            'status': 'online'
+        }, broadcast=True)
+        
+        print(f"✅ {username} connected - Active users: {len(active_users)}")
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle user disconnecting from WebSocket"""
+    user_id = session.get('user_id')
+    username = session.get('user_name')
+    
+    if user_id in active_users:
+        # Remove user from active users
+        del active_users[user_id]
+        
+        # Leave user's personal room
+        leave_room(f"user_{user_id}")
+        
+        # Broadcast user went offline to all users
+        socketio.emit('user_status_update', {
+            'user_id': user_id,
+            'username': username,
+            'status': 'offline'
+        }, broadcast=True)
+        
+        print(f"❌ {username} disconnected - Active users: {len(active_users)}")
+
+@socketio.on('ping_user')
+def handle_ping_user(data):
+    """Handle real-time ping sending"""
+    sender_id = session.get('user_id')
+    sender_name = session.get('user_name')
+    receiver_id = data.get('receiver_id')
+    
+    if not sender_id or not receiver_id:
+        emit('ping_error', {'error': 'Invalid user data'})
+        return
+    
+    if sender_id == receiver_id:
+        emit('ping_error', {'error': 'Cannot ping yourself'})
+        return
+    
+    # Save ping to database
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("""
+            INSERT INTO pings (sender_id, receiver_id, timestamp, is_read) 
+            SELECT %s, %s, CURRENT_TIMESTAMP, FALSE
+            WHERE EXISTS (SELECT 1 FROM players WHERE id = %s)
+            RETURNING id
+        """, (sender_id, receiver_id, sender_id))
+        
+        result = cur.fetchone()
+        if result:
+            conn.commit()
+            ping_id = result[0]
+            
+            # Send real-time notification to receiver
+            socketio.emit('new_ping_notification', {
+                'ping_id': ping_id,
+                'sender_id': sender_id,
+                'sender_name': sender_name,
+                'timestamp': datetime.now().isoformat(),
+                'message': f'{sender_name} pinged you!'
+            }, room=f"user_{receiver_id}")
+            
+            # Confirm to sender
+            emit('ping_success', {'message': f'Pinged {data.get("receiver_name", "user")}!'})
+            
+            print(f"📡 Real-time ping: {sender_name} → {receiver_id}")
+        else:
+            emit('ping_error', {'error': 'Failed to send ping'})
+        
+        cur.close()
+        
+    except Exception as e:
+        print(f"Ping error: {e}")
+        emit('ping_error', {'error': 'Database error'})
+    finally:
+        if conn:
+            release_db_connection(conn)
+
+@socketio.on('get_active_users')
+def handle_get_active_users():
+    """Send list of currently active users"""
+    active_list = []
+    for user_id, user_data in active_users.items():
+        active_list.append({
+            'user_id': user_id,
+            'username': user_data['username'],
+            'last_seen': user_data['last_seen']
+        })
+    
+    emit('active_users_list', {'active_users': active_list})
 
 def cleanup_old_pings():
     """Auto-cleanup: Delete pings older than 24 hours and limit to 10 per user"""
@@ -744,6 +872,16 @@ def ping_player(player_id):
         conn.commit()
         cur.close()
         
+        # ✅ REAL-TIME NOTIFICATION - Send instant notification via WebSocket
+        sender_name = session.get('user_name', 'Unknown')
+        socketio.emit('new_ping_notification', {
+            'ping_id': result[0],
+            'sender_id': sender_id,
+            'sender_name': sender_name,
+            'timestamp': datetime.now().isoformat(),
+            'message': f'{sender_name} pinged you!'
+        }, room=f"user_{player_id}")
+        
         return jsonify({'success': True, 'message': 'Ping sent successfully!'}), 200
         
     except Exception as e:
@@ -793,3 +931,28 @@ def get_time():
     try:
         time_str = get_local_time_for_country(country, include_timezone=True)
         return jsonify(time_str)
+    except Exception as e:
+        print(f"Error in /get_time: {e}")
+        return jsonify({"time": "Error", "timezone": None}), 500
+
+@lru_cache(maxsize=1000)
+def get_local_time_for_country(country_name, include_timezone=False):
+    try:
+        location = geolocator.geocode(country_name)
+        if not location:
+            return {"time": "N/A", "timezone": None} if include_timezone else "N/A"
+        tz_name = tz_finder.timezone_at(lat=location.latitude, lng=location.longitude)
+        if not tz_name:
+            return {"time": "N/A", "timezone": None} if include_timezone else "N/A"
+        tz = pytz.timezone(tz_name)
+        now = datetime.now(tz)
+        if include_timezone:
+            return {"time": now.strftime("%H:%M:%S"), "timezone": tz_name}
+        return now.strftime("%H:%M")
+    except:
+        return {"time": "N/A", "timezone": None} if include_timezone else "N/A"
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    # ✅ Run with SocketIO support
+    socketio.run(app, host="0.0.0.0", port=port, debug=True)

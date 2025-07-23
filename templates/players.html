@@ -1,4 +1,4 @@
-<!-- Template Version: {{ template_version }} - Force Update v3 -->
+<!-- Template Version: {{ template_version }} - Real-time WebSocket v1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,7 +11,413 @@
     
     <!-- ✅ CRITICAL CSS - Essential layout, colors, structure for instant render -->
     <style>
-        body{background-color:#1a1d2e;color:#e0e0e0;font-family:'Segoe UI',sans-serif;margin:0;padding:0}body.light-mode{background-color:#f4f4f4;color:#000}.current-user-row{background-color:rgba(110,193,228,0.15)!important;border:2px solid #6ec1e4!important}.toggle-theme{cursor:pointer;font-size:20px;color:#6ec1e4;margin-left:15px}body.light-mode .toggle-theme{color:#00695c}header{background-color:#272b3f;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}body.light-mode header{background-color:#ffffff}.admin-header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)!important;border:2px solid #ffd700}.admin-title{color:#ffd700!important;text-shadow:0 0 10px rgba(255,215,0,0.5)}.header-left{display:flex;align-items:center}h1{margin:0;font-size:1.5rem;color:#9ecbff}body.light-mode h1{color:#00695c}.actions a,.actions form{display:inline-block;margin-right:10px}.logout-btn,.edit-btn,.delete-btn{background-color:#e53935;color:white;padding:8px 15px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;text-decoration:none;font-size:14px}.edit-btn{background-color:#6ec1e4}.ping-btn{background-color:#00c853;color:white;padding:5px 10px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}table{width:100%;border-collapse:collapse;background-color:#272b3f;margin:20px 0;border-radius:15px;overflow:hidden}body.light-mode table{background-color:#ffffff}th,td{padding:12px;border-bottom:1px solid rgba(150,200,255,0.1);text-align:center}body.light-mode th,body.light-mode td{border-bottom:1px solid rgba(0,0,0,0.1)}th{background-color:#202437;color:#9ecbff;font-weight:bold}body.light-mode th{background-color:#f0f0f0;color:#00695c}.search-container{display:flex;gap:15px;margin:20px;padding:20px;background-color:#272b3f;border-radius:15px;flex-wrap:wrap;position:relative}body.light-mode .search-container{background-color:#ffffff}.search-box{display:flex;flex-direction:column;gap:5px}.search-box label{font-size:0.9rem;color:#9ecbff;font-weight:bold}body.light-mode .search-box label{color:#00695c}.search-box input[type="text"],.search-box select{padding:10px;width:200px;background-color:#202437;border:none;border-radius:8px;color:#ffffff;font-size:14px}body.light-mode .search-box input[type="text"],body.light-mode .search-box select{background-color:#f0f0f0;color:#000}.actions-cell{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+        body{background-color:#1a1d2e;color:#e0e0e0;font-family:'Segoe UI',sans-serif;margin:0;padding:0}body.light-mode{background-color:#f4f4f4;color:#000}.current-user-row{background-color:rgba(110,193,228,0.15)!important;border:2px solid #6ec1e4!important}.toggle-theme{cursor:pointer;font-size:20px;color:#6ec1e4;margin-left:15px}body.light-mode .toggle-theme{color:#00695c}header{background-color:#272b3f;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}body.light-mode header{background-color:#ffffff}.admin-header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)!important;border:2px solid #ffd700}.admin-title{color:#ffd700!important;text-shadow:0 0 10px rgba(255,215,0,0.5)}.header-left{display:flex;align-items:center}h1{margin:0;font-size:1.5rem;color:#9ecbff}body.light-mode h1{color:#00695c}.actions a,.actions form{display:inline-block;margin-right:10px}.logout-btn,.edit-btn,.delete-btn{background-color:#e53935;color:white;padding:8px 15px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;text-decoration:none;font-size:14px}.edit-btn{background-color:#6ec1e4}.ping-btn{background-color:#00c853;color:white;padding:5px 10px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}table{width:100%;border-collapse:collapse;background-color:#272b3f;margin:20px 0;border-radius:15px;overflow:hidden}body.light-mode table{box-shadow:0 0 10px rgba(0,0,0,0.1)}tr:hover{background-color:rgba(150,200,255,0.05)}body.light-mode tr:hover{background-color:rgba(0,0,0,0.05)}.search-container{box-shadow:0 0 15px rgba(150,200,255,0.15)}body.light-mode .search-container{box-shadow:0 0 10px rgba(0,0,0,0.1)}.notification-icon{position:absolute;right:20px;top:50%;transform:translateY(-50%);width:45px;height:45px;background:linear-gradient(135deg,#ff6b6b,#ee5a52);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(255,107,107,0.4);animation:gentleFloat 3s ease-in-out infinite;transition:all 0.3s ease;z-index:15}body.light-mode .notification-icon{background:linear-gradient(135deg,#ff5722,#d84315);box-shadow:0 4px 15px rgba(255,87,34,0.4)}.notification-icon:hover{transform:translateY(-50%) scale(1.1);box-shadow:0 6px 25px rgba(255,107,107,0.6)}body.light-mode .notification-icon:hover{box-shadow:0 6px 25px rgba(255,87,34,0.6)}.notification-icon .icon{font-size:20px;animation:ping-pulse 2s ease-in-out infinite}.notification-count{position:absolute;top:-8px;right:-8px;background:#ffd700;color:#000;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;animation:bounce-count 1s ease-in-out infinite alternate}@keyframes gentleFloat{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-55%)}}@keyframes ping-pulse{0%,100%{opacity:1}50%{opacity:0.7}}@keyframes bounce-count{0%{transform:scale(1)}100%{transform:scale(1.1)}}.notification-popup{position:absolute;right:20px;top:-280px;width:280px;max-height:250px;background:#272b3f;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.5);z-index:1000;opacity:0;transform:translateY(-10px);transition:all 0.3s ease;overflow:hidden}body.light-mode .notification-popup{background:#ffffff;box-shadow:0 10px 30px rgba(0,0,0,0.15)}.notification-popup.show{opacity:1;transform:translateY(0)}.popup-header{background:linear-gradient(135deg,#ff6b6b,#ee5a52);color:white;padding:12px 15px;text-align:center;font-weight:bold;font-size:14px;position:relative}body.light-mode .popup-header{background:linear-gradient(135deg,#ff5722,#d84315)}.popup-close{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:white;font-size:16px;cursor:pointer;opacity:0.8;transition:opacity 0.2s}.clear-all-btn{position:absolute;right:35px;top:50%;transform:translateY(-50%);background:#ff4757;border:none;color:white;padding:3px 6px;border-radius:3px;font-size:10px;cursor:pointer;opacity:0.8;transition:all 0.2s}.clear-all-btn:hover{opacity:1;background:#ff3838}.popup-close:hover{opacity:1}.notification-list{max-height:180px;overflow-y:auto;padding:8px}.notification-item{background:rgba(110,193,228,0.1);border:1px solid rgba(110,193,228,0.2);border-radius:6px;padding:8px 10px;margin-bottom:6px;transition:all 0.3s ease;display:flex;justify-content:space-between;align-items:center}body.light-mode .notification-item{background:rgba(0,105,92,0.05);border:1px solid rgba(0,105,92,0.1)}.notification-item:hover{background:rgba(110,193,228,0.2);transform:translateX(3px)}body.light-mode .notification-item:hover{background:rgba(0,105,92,0.1)}.ping-info-compact{display:flex;flex-direction:column;flex:1}.ping-sender{font-weight:bold;color:#6ec1e4;font-size:13px;margin-bottom:2px}body.light-mode .ping-sender{color:#00695c}.ping-details{font-size:11px;opacity:0.8;color:#9ecbff}body.light-mode .ping-details{color:#00695c}.ping-count{background:#ffd700;color:#000;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:bold;margin-left:5px}.ping-back-btn-compact{background:#00c853;color:white;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;transition:background 0.3s;margin-left:8px}.ping-back-btn-compact:hover{background:#00a847}.no-notifications{text-align:center;padding:20px;opacity:0.6;font-style:italic;font-size:12px}@media screen and (max-width:768px){.search-container{flex-direction:column;margin:10px;padding:15px}.notification-icon{right:10px;width:40px;height:40px}.notification-popup{right:10px;width:calc(100vw - 20px);max-width:250px}.search-box input[type="text"],.search-box select{width:100%}header{flex-direction:column;gap:10px;text-align:center}.header-left{flex-direction:column;gap:10px}.actions{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}table{font-size:12px}.actions-cell{flex-direction:column;gap:5px}.toggle-theme{margin-left:0;font-size:22px}}
+</style>
+
+<script>
+    // ✅ REAL-TIME WEBSOCKET CONNECTION
+    const socket = io();
+    
+    // CSRF Token - MUST be at the top
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Current user ID for comparison
+    const currentUserId = {{ session.get('user_id') if session.get('user_id') else 'null' }};
+    
+    // Check if user is admin and apply special styling
+    const isAdmin = {{ 'true' if session.get('role') == 'admin' else 'false' }};
+    
+    if (isAdmin) {
+        // Apply admin header styling
+        const header = document.getElementById('main-header');
+        const title = document.getElementById('main-title');
+        
+        header.classList.add('admin-header');
+        title.classList.add('admin-title');
+    }
+
+    // ✅ WEBSOCKET EVENT HANDLERS
+    
+    // Connection status updates
+    socket.on('connect', function() {
+        console.log('✅ Connected to real-time server');
+        updateConnectionStatus('connected');
+        
+        // Request active users list
+        socket.emit('get_active_users');
+    });
+    
+    socket.on('disconnect', function() {
+        console.log('❌ Disconnected from real-time server');
+        updateConnectionStatus('disconnected');
+        
+        // Clear all online indicators
+        document.querySelectorAll('.online-indicator').forEach(indicator => {
+            indicator.className = 'offline-indicator';
+            indicator.title = 'Offline';
+        });
+        
+        updateActiveUsersCount(0);
+    });
+    
+    socket.on('connect_error', function() {
+        console.log('⚠️ Connection error');
+        updateConnectionStatus('connecting');
+    });
+    
+    // Real-time ping notifications
+    socket.on('new_ping_notification', function(data) {
+        console.log('📡 New ping received:', data);
+        showRealtimeNotification(data);
+        updateNotificationBadge();
+    });
+    
+    // User status updates (online/offline)
+    socket.on('user_status_update', function(data) {
+        console.log('👤 User status update:', data);
+        updateUserStatus(data.user_id, data.status);
+    });
+    
+    // Active users list
+    socket.on('active_users_list', function(data) {
+        console.log('📊 Active users:', data.active_users.length);
+        updateActiveUsersCount(data.active_users.length);
+        
+        // Update status indicators for all active users
+        data.active_users.forEach(user => {
+            updateUserStatus(user.user_id, 'online');
+        });
+    });
+    
+    // Ping success/error responses
+    socket.on('ping_success', function(data) {
+        console.log('✅ Ping sent successfully:', data.message);
+    });
+    
+    socket.on('ping_error', function(data) {
+        console.log('❌ Ping error:', data.error);
+        showRealtimeNotification({
+            sender_name: 'System',
+            message: data.error,
+            timestamp: new Date().toISOString()
+        }, 'error');
+    });
+    
+    // ✅ REAL-TIME FUNCTIONS
+    
+    function updateConnectionStatus(status) {
+        const statusEl = document.getElementById('connectionStatus');
+        statusEl.className = `connection-status ${status}`;
+        
+        switch(status) {
+            case 'connected':
+                statusEl.textContent = '🟢 Connected';
+                break;
+            case 'disconnected':
+                statusEl.textContent = '🔴 Disconnected';
+                break;
+            case 'connecting':
+                statusEl.textContent = '🟡 Connecting...';
+                break;
+        }
+    }
+    
+    function updateActiveUsersCount(count) {
+        const counterEl = document.getElementById('activeCount');
+        if (counterEl) {
+            counterEl.textContent = count;
+        }
+    }
+    
+    function updateUserStatus(userId, status) {
+        const statusCell = document.querySelector(`[data-player-id="${userId}"] .status-cell`);
+        if (statusCell) {
+            const indicator = statusCell.querySelector('.online-indicator, .offline-indicator');
+            if (indicator) {
+                if (status === 'online') {
+                    indicator.className = 'online-indicator';
+                    indicator.title = 'Online';
+                } else {
+                    indicator.className = 'offline-indicator';
+                    indicator.title = 'Offline';
+                }
+            }
+        }
+    }
+    
+    function showRealtimeNotification(data, type = 'success') {
+        const notification = document.getElementById('realtimeNotification');
+        const content = document.getElementById('notificationContent');
+        
+        // Set notification content
+        content.innerHTML = `
+            <strong>${data.sender_name}</strong><br>
+            ${data.message}
+            <br><small>${new Date(data.timestamp).toLocaleTimeString()}</small>
+        `;
+        
+        // Change color based on type
+        if (type === 'error') {
+            notification.style.background = 'linear-gradient(135deg, #f44336, #d32f2f)';
+        } else {
+            notification.style.background = 'linear-gradient(135deg, #00c853, #4caf50)';
+        }
+        
+        // Show notification
+        notification.classList.add('show');
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            closeRealtimeNotification();
+        }, 5000);
+    }
+    
+    function closeRealtimeNotification() {
+        const notification = document.getElementById('realtimeNotification');
+        notification.classList.remove('show');
+        notification.classList.add('hide');
+        
+        setTimeout(() => {
+            notification.classList.remove('hide');
+        }, 300);
+    }
+    
+    function updateNotificationBadge() {
+        // This would update the notification badge count
+        // Implementation depends on your existing notification system
+        console.log('📱 Updating notification badge');
+    }
+
+    // Theme toggle functionality
+    const toggle = document.getElementById('theme-toggle');
+    toggle.addEventListener('click', () => {
+        document.body.classList.toggle('light-mode');
+        toggle.innerText = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+    });
+
+    // Table filtering
+    document.getElementById('nameSearch').addEventListener('input', filterTable);
+    document.getElementById('countryFilter').addEventListener('change', filterTable);
+    document.getElementById('tierFilter').addEventListener('change', filterTable);
+
+    function filterTable() {
+        const nameValue = document.getElementById('nameSearch').value.toLowerCase();
+        const countryValue = document.getElementById('countryFilter').value;
+        const tierValue = document.getElementById('tierFilter').value;
+        const rows = document.querySelectorAll('#playerTable tr');
+
+        rows.forEach(row => {
+            const name = row.cells[0].textContent.toLowerCase();
+            const country = row.cells[1].textContent;
+            const tier = row.cells[2].textContent;
+
+            const matchesName = name.includes(nameValue);
+            const matchesCountry = countryValue === '' || country === countryValue;
+            const matchesTier = tierValue === '' || tier === tierValue;
+
+            row.style.display = matchesName && matchesCountry && matchesTier ? '' : 'none';
+        });
+    }
+
+    // Notification Popup functionality
+    const notificationIcon = document.getElementById('notificationIcon');
+    const notificationPopup = document.getElementById('notificationPopup');
+    const popupClose = document.getElementById('popupClose');
+
+    if (notificationIcon && notificationPopup) {
+        notificationIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationPopup.classList.toggle('show');
+        });
+
+        if (popupClose) {
+            popupClose.addEventListener('click', (e) => {
+                e.stopPropagation();
+                notificationPopup.classList.remove('show');
+            });
+        }
+
+        // Close popup when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!notificationPopup.contains(e.target) && !notificationIcon.contains(e.target)) {
+                notificationPopup.classList.remove('show');
+            }
+        });
+
+        // Compact ping back functionality
+        const pingBackButtons = document.querySelectorAll('.ping-back-btn-compact');
+        pingBackButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const senderId = this.dataset.senderId;
+                
+                if (senderId) {
+                    // ✅ Use WebSocket for real-time ping back
+                    socket.emit('ping_user', {
+                        receiver_id: parseInt(senderId),
+                        receiver_name: this.closest('.notification-item').querySelector('.ping-sender').textContent.trim()
+                    });
+                    
+                    this.textContent = 'Sent!';
+                    this.style.background = '#4caf50';
+                    setTimeout(() => {
+                        this.textContent = 'Ping Back';
+                        this.style.background = '#00c853';
+                    }, 2000);
+                }
+                
+                // Mark as read (existing functionality)
+                if (senderId) {
+                    fetch(`/mark_ping_read/${senderId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        }
+                    }).then(response => {
+                        if (response.ok) {
+                            // Remove this notification item completely
+                            const notificationItem = this.closest('.notification-item');
+                            notificationItem.style.opacity = '0';
+                            notificationItem.style.transform = 'translateX(-100%)';
+                            
+                            setTimeout(() => {
+                                notificationItem.remove();
+                                updateNotificationCount();
+                                checkIfEmpty();
+                            }, 300);
+                        }
+                    });
+                }
+            });
+        });
+
+        // Clear all notifications functionality
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        if (clearAllBtn) {
+            clearAllBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (confirm('Clear all ping notifications?')) {
+                    const notificationItems = document.querySelectorAll('.notification-item');
+                    const senderIds = Array.from(notificationItems).map(item => item.dataset.senderId);
+                    
+                    // Mark all as read
+                    Promise.all(senderIds.map(senderId => 
+                        fetch(`/mark_ping_read/${senderId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken
+                            }
+                        })
+                    )).then(() => {
+                        // Remove all notification items
+                        notificationItems.forEach(item => {
+                            item.style.opacity = '0';
+                            item.style.transform = 'translateX(-100%)';
+                        });
+                        
+                        setTimeout(() => {
+                            notificationItems.forEach(item => item.remove());
+                            updateNotificationCount();
+                            checkIfEmpty();
+                            clearAllBtn.style.display = 'none';
+                        }, 300);
+                    });
+                }
+            });
+        }
+
+        // Function to update notification count
+        function updateNotificationCount() {
+            const notificationCount = document.getElementById('notificationCount');
+            const pingCountText = document.getElementById('pingCountText');
+            const pingPlural = document.getElementById('pingPlural');
+            const remainingNotifications = document.querySelectorAll('.notification-item').length;
+            
+            if (remainingNotifications === 0) {
+                notificationCount.style.display = 'none';
+                if (pingCountText) pingCountText.textContent = '0';
+                if (pingPlural) pingPlural.textContent = '';
+            } else {
+                // Recalculate total ping count
+                let totalPings = 0;
+                document.querySelectorAll('.ping-count').forEach(counter => {
+                    totalPings += parseInt(counter.textContent) || 0;
+                });
+                notificationCount.style.display = 'flex';
+                notificationCount.textContent = totalPings;
+                if (pingCountText) pingCountText.textContent = totalPings;
+                if (pingPlural) pingPlural.textContent = totalPings !== 1 ? 's' : '';
+            }
+        }
+
+        // Function to check if notifications are empty and show message
+        function checkIfEmpty() {
+            const notificationList = document.getElementById('notificationList');
+            const remainingNotifications = document.querySelectorAll('.notification-item').length;
+            
+            if (remainingNotifications === 0) {
+                const noNotifications = document.createElement('div');
+                noNotifications.className = 'no-notifications';
+                noNotifications.id = 'noNotifications';
+                noNotifications.textContent = 'No ping notifications yet! 🌟';
+                notificationList.appendChild(noNotifications);
+                
+                // Hide clear all button
+                const clearAllBtn = document.getElementById('clearAllBtn');
+                if (clearAllBtn) clearAllBtn.style.display = 'none';
+            }
+        }
+    }
+
+    // ✅ ENHANCED PING FUNCTIONALITY - Real-time ping buttons
+    document.querySelectorAll('.ping-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const playerId = parseInt(this.dataset.playerId);
+            const playerName = this.dataset.playerName;
+            
+            // Double check - don't let users ping themselves
+            if (currentUserId && playerId === currentUserId) {
+                this.textContent = 'Cannot ping yourself';
+                this.className = 'ping-btn error';
+                setTimeout(() => {
+                    this.textContent = 'Ping';
+                    this.className = 'ping-btn';
+                }, 2000);
+                return;
+            }
+            
+            // Show sending state
+            this.textContent = 'Sending...';
+            this.className = 'ping-btn sending';
+            
+            // ✅ Send real-time ping via WebSocket
+            socket.emit('ping_user', {
+                receiver_id: playerId,
+                receiver_name: playerName
+            });
+            
+            // Update button state after sending
+            setTimeout(() => {
+                this.textContent = 'Sent!';
+                this.className = 'ping-btn sent';
+                
+                setTimeout(() => {
+                    this.textContent = 'Ping';
+                    this.className = 'ping-btn';
+                }, 2000);
+            }, 500);
+        });
+    });
+
+</script>
+
+</body>
+</html>background-color:#ffffff}th,td{padding:12px;border-bottom:1px solid rgba(150,200,255,0.1);text-align:center}body.light-mode th,body.light-mode td{border-bottom:1px solid rgba(0,0,0,0.1)}th{background-color:#202437;color:#9ecbff;font-weight:bold}body.light-mode th{background-color:#f0f0f0;color:#00695c}.search-container{display:flex;gap:15px;margin:20px;padding:20px;background-color:#272b3f;border-radius:15px;flex-wrap:wrap;position:relative}body.light-mode .search-container{background-color:#ffffff}.search-box{display:flex;flex-direction:column;gap:5px}.search-box label{font-size:0.9rem;color:#9ecbff;font-weight:bold}body.light-mode .search-box label{color:#00695c}.search-box input[type="text"],.search-box select{padding:10px;width:200px;background-color:#202437;border:none;border-radius:8px;color:#ffffff;font-size:14px}body.light-mode .search-box input[type="text"],body.light-mode .search-box select{background-color:#f0f0f0;color:#000}.actions-cell{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+        
+        /* ✅ REAL-TIME FEATURES STYLING */
+        .online-indicator{display:inline-block;width:10px;height:10px;border-radius:50%;background-color:#00c853;margin-left:8px;animation:pulse-online 2s infinite}.offline-indicator{display:inline-block;width:10px;height:10px;border-radius:50%;background-color:#666;margin-left:8px}@keyframes pulse-online{0%{opacity:1}50%{opacity:0.5}100%{opacity:1}}.realtime-notification{position:fixed;top:80px;right:20px;background:linear-gradient(135deg,#00c853,#4caf50);color:white;padding:15px 20px;border-radius:10px;box-shadow:0 4px 20px rgba(0,200,83,0.4);z-index:10000;transform:translateX(300px);opacity:0;transition:all 0.3s ease}.realtime-notification.show{transform:translateX(0);opacity:1}.realtime-notification.hide{transform:translateX(300px);opacity:0}.notification-close{position:absolute;top:5px;right:10px;background:none;border:none;color:white;font-size:16px;cursor:pointer;opacity:0.8}.notification-close:hover{opacity:1}.connection-status{position:fixed;bottom:20px;right:20px;padding:8px 12px;border-radius:20px;font-size:12px;font-weight:bold;z-index:1000;transition:all 0.3s ease}.connected{background-color:#00c853;color:white}.disconnected{background-color:#f44336;color:white}.connecting{background-color:#ff9800;color:white}.active-users-counter{background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:5px 12px;border-radius:15px;font-size:12px;font-weight:bold;margin-left:15px}.ping-btn.sending{background-color:#ff9800!important;pointer-events:none}.ping-btn.sent{background-color:#4caf50!important}.ping-btn.error{background-color:#f44336!important}
     </style>
 </head>
 <body>
@@ -20,6 +426,10 @@
     <div class="header-left">
         <h1 id="main-title">Mob Control Global Player List</h1>
         <div class="toggle-theme" id="theme-toggle">🌙</div>
+        <!-- ✅ Real-time active users counter -->
+        <div class="active-users-counter" id="activeUsersCounter">
+            🟢 <span id="activeCount">0</span> online
+        </div>
     </div>
     <div class="actions">
         <!-- Debug info - Remove this in production -->
@@ -94,7 +504,7 @@
     <!-- Compact Notification Popup -->
     <div class="notification-popup" id="notificationPopup">
         <div class="popup-header">
-            📡 {{ total_pings }} Ping{{ 's' if total_pings != 1 else '' }}
+            📡 <span id="pingCountText">{{ total_pings }}</span> Ping<span id="pingPlural">{{ 's' if total_pings != 1 else '' }}</span>
             <button class="popup-close" id="popupClose">×</button>
             {% if user_pings and user_pings|length > 0 %}
             <button class="clear-all-btn" id="clearAllBtn">Clear</button>
@@ -135,12 +545,13 @@
                 <th>Tier</th>
                 <th>Local Time</th>
                 <th>Social Links</th>
+                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody id="playerTable">
             {% for player in players %}
-            <tr {% if (session.get('role') == 'admin' and player['id'] == session.get('user_id')) or (session.get('role') == 'admin' and player['username'] == 'omfgryu') or player.get('is_admin') %}class="admin-profile-row"{% elif player['id'] == session.get('user_id') %}class="current-user-row"{% endif %}>
+            <tr {% if (session.get('role') == 'admin' and player['id'] == session.get('user_id')) or (session.get('role') == 'admin' and player['username'] == 'omfgryu') or player.get('is_admin') %}class="admin-profile-row"{% elif player['id'] == session.get('user_id') %}class="current-user-row"{% endif %} data-player-id="{{ player['id'] }}">
                 <td>
                     {% if (session.get('role') == 'admin' and player['id'] == session.get('user_id')) or (session.get('role') == 'admin' and player['username'] == 'omfgryu') or player.get('is_admin') %}
                         👑 {{ player['username'] }} 👑
@@ -154,6 +565,9 @@
                     {{ player['local_time'] if player['local_time'] != 'N/A' else 'Calculating...' }}
                 </td>
                 <td>{{ player['social_links'] if player['social_links'] else 'N/A' }}</td>
+                <td class="status-cell" data-player-id="{{ player['id'] }}">
+                    <span class="offline-indicator" title="Offline"></span>
+                </td>
                 <td class="actions-cell">
                     {% if session.get('user_id') == player['id'] %}
                         <a href="{{ url_for('edit_profile') }}" class="edit-btn {% if session.get('role') == 'admin' %}admin-edit-btn{% endif %}">
@@ -174,7 +588,7 @@
                     
                     <!-- Only show ping button for OTHER users, not yourself -->
                     {% if session.get('user_id') != player['id'] %}
-                        <button class="ping-btn" data-player-id="{{ player['id'] }}">Ping</button>
+                        <button class="ping-btn" data-player-id="{{ player['id'] }}" data-player-name="{{ player['username'] }}">Ping</button>
                     {% endif %}
                 </td>
             </tr>
@@ -183,277 +597,18 @@
     </table>
 </div>
 
+<!-- ✅ REAL-TIME NOTIFICATION POPUP -->
+<div id="realtimeNotification" class="realtime-notification">
+    <button class="notification-close" onclick="closeRealtimeNotification()">×</button>
+    <div id="notificationContent"></div>
+</div>
+
+<!-- ✅ CONNECTION STATUS INDICATOR -->
+<div id="connectionStatus" class="connection-status connecting">Connecting...</div>
+
+<!-- ✅ Load SocketIO from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+
 <!-- ✅ NON-CRITICAL CSS - Load after page renders for better performance -->
 <style>
-    body{transition:background-color 0.3s,color 0.3s}.toggle-theme:hover{transform:scale(1.1)}.admin-header::before{content:"";position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent,rgba(255,215,0,0.1),transparent);animation:shimmer 3s infinite;pointer-events:none}@keyframes shimmer{0%{transform:translateX(-100%) translateY(-100%) rotate(45deg)}100%{transform:translateX(100%) translateY(100%) rotate(45deg)}}.admin-title::before{content:"👑 ";animation:bounce 2s infinite}.admin-title::after{content:" 👑";animation:bounce 2s infinite 0.5s}@keyframes bounce{0%,20%,50%,80%,100%{transform:translateY(0)}40%{transform:translateY(-10px)}60%{transform:translateY(-5px)}}.edit-btn:hover{background-color:#5ab0d6}.logout-btn:hover,.delete-btn:hover{background-color:#d32f2f}.admin-edit-btn{background:linear-gradient(135deg,#ffd700,#ffed4e)!important;color:#000!important;border:2px solid #ffd700;box-shadow:0 0 15px rgba(255,215,0,0.4);text-shadow:none!important}.admin-edit-btn:hover{background:linear-gradient(135deg,#ffed4e,#fff176)!important;transform:translateY(-2px);box-shadow:0 5px 20px rgba(255,215,0,0.6)}.admin-logout-btn{background:linear-gradient(135deg,#ff6b6b,#ee5a52)!important;border:2px solid #ff5252;box-shadow:0 0 15px rgba(255,107,107,0.4)}.admin-logout-btn:hover{background:linear-gradient(135deg,#ff5252,#e53935)!important;transform:translateY(-2px);box-shadow:0 5px 20px rgba(255,107,107,0.6)}.ping-btn:hover{background-color:#00a847}.admin-profile-row{background:linear-gradient(45deg,#ff6b6b,#4ecdc4,#45b7d1,#96ceb4,#ffeaa7)!important;background-size:300% 300%!important;animation:adminGradient 3s ease infinite!important;border:3px solid #ffd700!important;box-shadow:0 0 25px rgba(255,215,0,0.7)!important;position:relative;z-index:2}.admin-profile-row::before{content:"👑 SUPREME ADMIN 👑";position:absolute;top:-18px;left:50%;transform:translateX(-50%);background:linear-gradient(45deg,#ffd700,#ffed4e);color:#000;padding:4px 16px;border-radius:20px;font-size:12px;font-weight:bold;box-shadow:0 3px 15px rgba(255,215,0,0.5);z-index:10;border:2px solid #fff;animation:glow 2s ease-in-out infinite alternate}@keyframes glow{from{box-shadow:0 3px 15px rgba(255,215,0,0.5)}to{box-shadow:0 6px 25px rgba(255,215,0,0.9)}}.admin-profile-row td{color:#000!important;font-weight:bold!important;text-shadow:1px 1px 2px rgba(255,255,255,0.8)!important;font-size:1.1em!important}body.light-mode .admin-profile-row td{color:#000!important;text-shadow:1px 1px 2px rgba(255,255,255,0.8)!important}@keyframes adminGradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}.admin-controls{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:20px;margin:20px;border-radius:15px;text-align:center;box-shadow:0 8px 25px rgba(102,126,234,0.4);border:3px solid #ffd700;position:relative;overflow:hidden}.admin-controls::before{content:"";position:absolute;top:-2px;left:-2px;right:-2px;bottom:-2px;background:linear-gradient(45deg,#ffd700,#ff6b6b,#4ecdc4,#ffd700);background-size:200% 200%;animation:borderGlow 3s linear infinite;border-radius:15px;z-index:-1}@keyframes borderGlow{0%{background-position:0% 50%}100%{background-position:200% 50%}}.admin-controls h2{margin:0 0 15px 0;font-size:1.4rem;text-shadow:2px 2px 4px rgba(0,0,0,0.3);animation:pulse 2s ease-in-out infinite alternate}.admin-controls p{margin:0;font-size:1rem;opacity:0.95;font-weight:500}@keyframes pulse{from{text-shadow:2px 2px 4px rgba(0,0,0,0.3)}to{text-shadow:2px 2px 8px rgba(255,215,0,0.6)}}.super-delete-btn{background:linear-gradient(135deg,#ff4757,#c44569)!important;color:white!important;border:2px solid #ff3838!important;box-shadow:0 4px 15px rgba(255,71,87,0.4)!important;animation:deleteButtonPulse 2s infinite!important}.super-delete-btn:hover{background:linear-gradient(135deg,#ff3838,#b83759)!important;transform:scale(1.05)!important;box-shadow:0 6px 20px rgba(255,71,87,0.6)!important}@keyframes deleteButtonPulse{0%{box-shadow:0 4px 15px rgba(255,71,87,0.4)}50%{box-shadow:0 4px 25px rgba(255,71,87,0.7)}100%{box-shadow:0 4px 15px rgba(255,71,87,0.4)}}table{box-shadow:0 0 15px rgba(150,200,255,0.15)}body.light-mode table{box-shadow:0 0 10px rgba(0,0,0,0.1)}tr:hover{background-color:rgba(150,200,255,0.05)}body.light-mode tr:hover{background-color:rgba(0,0,0,0.05)}.search-container{box-shadow:0 0 15px rgba(150,200,255,0.15)}body.light-mode .search-container{box-shadow:0 0 10px rgba(0,0,0,0.1)}.notification-icon{position:absolute;right:20px;top:50%;transform:translateY(-50%);width:45px;height:45px;background:linear-gradient(135deg,#ff6b6b,#ee5a52);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(255,107,107,0.4);animation:gentleFloat 3s ease-in-out infinite;transition:all 0.3s ease;z-index:15}body.light-mode .notification-icon{background:linear-gradient(135deg,#ff5722,#d84315);box-shadow:0 4px 15px rgba(255,87,34,0.4)}.notification-icon:hover{transform:translateY(-50%) scale(1.1);box-shadow:0 6px 25px rgba(255,107,107,0.6)}body.light-mode .notification-icon:hover{box-shadow:0 6px 25px rgba(255,87,34,0.6)}.notification-icon .icon{font-size:20px;animation:ping-pulse 2s ease-in-out infinite}.notification-count{position:absolute;top:-8px;right:-8px;background:#ffd700;color:#000;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;animation:bounce-count 1s ease-in-out infinite alternate}@keyframes gentleFloat{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-55%)}}@keyframes ping-pulse{0%,100%{opacity:1}50%{opacity:0.7}}@keyframes bounce-count{0%{transform:scale(1)}100%{transform:scale(1.1)}}.notification-popup{position:absolute;right:20px;top:-280px;width:280px;max-height:250px;background:#272b3f;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.5);z-index:1000;opacity:0;transform:translateY(-10px);transition:all 0.3s ease;overflow:hidden}body.light-mode .notification-popup{background:#ffffff;box-shadow:0 10px 30px rgba(0,0,0,0.15)}.notification-popup.show{opacity:1;transform:translateY(0)}.popup-header{background:linear-gradient(135deg,#ff6b6b,#ee5a52);color:white;padding:12px 15px;text-align:center;font-weight:bold;font-size:14px;position:relative}body.light-mode .popup-header{background:linear-gradient(135deg,#ff5722,#d84315)}.popup-close{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:white;font-size:16px;cursor:pointer;opacity:0.8;transition:opacity 0.2s}.clear-all-btn{position:absolute;right:35px;top:50%;transform:translateY(-50%);background:#ff4757;border:none;color:white;padding:3px 6px;border-radius:3px;font-size:10px;cursor:pointer;opacity:0.8;transition:all 0.2s}.clear-all-btn:hover{opacity:1;background:#ff3838}.popup-close:hover{opacity:1}.notification-list{max-height:180px;overflow-y:auto;padding:8px}.notification-item{background:rgba(110,193,228,0.1);border:1px solid rgba(110,193,228,0.2);border-radius:6px;padding:8px 10px;margin-bottom:6px;transition:all 0.3s ease;display:flex;justify-content:space-between;align-items:center}body.light-mode .notification-item{background:rgba(0,105,92,0.05);border:1px solid rgba(0,105,92,0.1)}.notification-item:hover{background:rgba(110,193,228,0.2);transform:translateX(3px)}body.light-mode .notification-item:hover{background:rgba(0,105,92,0.1)}.ping-info-compact{display:flex;flex-direction:column;flex:1}.ping-sender{font-weight:bold;color:#6ec1e4;font-size:13px;margin-bottom:2px}body.light-mode .ping-sender{color:#00695c}.ping-details{font-size:11px;opacity:0.8;color:#9ecbff}body.light-mode .ping-details{color:#00695c}.ping-count{background:#ffd700;color:#000;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:bold;margin-left:5px}.ping-back-btn-compact{background:#00c853;color:white;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;transition:background 0.3s;margin-left:8px}.ping-back-btn-compact:hover{background:#00a847}.no-notifications{text-align:center;padding:20px;opacity:0.6;font-style:italic;font-size:12px}@media screen and (max-width:768px){.search-container{flex-direction:column;margin:10px;padding:15px}.notification-icon{right:10px;width:40px;height:40px}.notification-popup{right:10px;width:calc(100vw - 20px);max-width:250px}.search-box input[type="text"],.search-box select{width:100%}header{flex-direction:column;gap:10px;text-align:center}.header-left{flex-direction:column;gap:10px}.actions{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}table{font-size:12px}.actions-cell{flex-direction:column;gap:5px}.toggle-theme{margin-left:0;font-size:22px}}
-</style>
-
-<script>
-    // CSRF Token - MUST be at the top
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-    // Function to make POST requests with CSRF token
-    function postWithCSRF(url, data = {}) {
-        return fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify(data)
-        });
-    }
-
-    // Current user ID for comparison
-    const currentUserId = {{ session.get('user_id') if session.get('user_id') else 'null' }};
-    
-    // Check if user is admin and apply special styling
-    const isAdmin = {{ 'true' if session.get('role') == 'admin' else 'false' }};
-    
-    if (isAdmin) {
-        // Apply admin header styling
-        const header = document.getElementById('main-header');
-        const title = document.getElementById('main-title');
-        
-        header.classList.add('admin-header');
-        title.classList.add('admin-title');
-    }
-
-    // Theme toggle functionality
-    const toggle = document.getElementById('theme-toggle');
-    toggle.addEventListener('click', () => {
-        document.body.classList.toggle('light-mode');
-        toggle.innerText = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
-    });
-
-    // Table filtering
-    document.getElementById('nameSearch').addEventListener('input', filterTable);
-    document.getElementById('countryFilter').addEventListener('change', filterTable);
-    document.getElementById('tierFilter').addEventListener('change', filterTable);
-
-    function filterTable() {
-        const nameValue = document.getElementById('nameSearch').value.toLowerCase();
-        const countryValue = document.getElementById('countryFilter').value;
-        const tierValue = document.getElementById('tierFilter').value;
-        const rows = document.querySelectorAll('#playerTable tr');
-
-        rows.forEach(row => {
-            const name = row.cells[0].textContent.toLowerCase();
-            const country = row.cells[1].textContent;
-            const tier = row.cells[2].textContent;
-
-            const matchesName = name.includes(nameValue);
-            const matchesCountry = countryValue === '' || country === countryValue;
-            const matchesTier = tierValue === '' || tier === tierValue;
-
-            row.style.display = matchesName && matchesCountry && matchesTier ? '' : 'none';
-        });
-    }
-
-    // Notification Popup functionality
-    const notificationIcon = document.getElementById('notificationIcon');
-    const notificationPopup = document.getElementById('notificationPopup');
-    const popupClose = document.getElementById('popupClose');
-
-    if (notificationIcon && notificationPopup) {
-        notificationIcon.addEventListener('click', (e) => {
-            e.stopPropagation();
-            notificationPopup.classList.toggle('show');
-        });
-
-        if (popupClose) {
-            popupClose.addEventListener('click', (e) => {
-                e.stopPropagation();
-                notificationPopup.classList.remove('show');
-            });
-        }
-
-        // Close popup when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!notificationPopup.contains(e.target) && !notificationIcon.contains(e.target)) {
-                notificationPopup.classList.remove('show');
-            }
-        });
-
-        // Compact ping back functionality
-        const pingBackButtons = document.querySelectorAll('.ping-back-btn-compact');
-        pingBackButtons.forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const senderId = this.dataset.senderId;
-                
-                if (senderId) {
-                    // Ping back the sender
-                    postWithCSRF(`/ping/${senderId}`)
-                        .then(response => {
-                            if (response.ok) {
-                                this.textContent = 'Sent!';
-                                this.style.background = '#4caf50';
-                                setTimeout(() => {
-                                    this.textContent = 'Ping Back';
-                                    this.style.background = '#00c853';
-                                }, 2000);
-                            } else {
-                                this.textContent = 'Error';
-                                this.style.background = '#f44336';
-                                setTimeout(() => {
-                                    this.textContent = 'Ping Back';
-                                    this.style.background = '#00c853';
-                                }, 2000);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            this.textContent = 'Failed';
-                            this.style.background = '#f44336';
-                            setTimeout(() => {
-                                this.textContent = 'Ping Back';
-                                this.style.background = '#00c853';
-                            }, 2000);
-                        });
-                }
-                
-                // Mark all pings from this sender as read and remove item
-                if (senderId) {
-                    postWithCSRF(`/mark_ping_read/${senderId}`)
-                        .then(response => {
-                            if (response.ok) {
-                                // Remove this notification item completely
-                                const notificationItem = this.closest('.notification-item');
-                                notificationItem.style.opacity = '0';
-                                notificationItem.style.transform = 'translateX(-100%)';
-                                
-                                setTimeout(() => {
-                                    notificationItem.remove();
-                                    updateNotificationCount();
-                                    checkIfEmpty();
-                                }, 300);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error marking as read:', error);
-                        });
-                }
-            });
-        });
-
-        // Clear all notifications functionality
-        const clearAllBtn = document.getElementById('clearAllBtn');
-        if (clearAllBtn) {
-            clearAllBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                if (confirm('Clear all ping notifications?')) {
-                    const notificationItems = document.querySelectorAll('.notification-item');
-                    const senderIds = Array.from(notificationItems).map(item => item.dataset.senderId);
-                    
-                    // Mark all as read
-                    Promise.all(senderIds.map(senderId => 
-                        postWithCSRF(`/mark_ping_read/${senderId}`)
-                    )).then(() => {
-                        // Remove all notification items
-                        notificationItems.forEach(item => {
-                            item.style.opacity = '0';
-                            item.style.transform = 'translateX(-100%)';
-                        });
-                        
-                        setTimeout(() => {
-                            notificationItems.forEach(item => item.remove());
-                            updateNotificationCount();
-                            checkIfEmpty();
-                            clearAllBtn.style.display = 'none';
-                        }, 300);
-                    });
-                }
-            });
-        }
-
-        // Function to update notification count
-        function updateNotificationCount() {
-            const notificationCount = document.getElementById('notificationCount');
-            const remainingNotifications = document.querySelectorAll('.notification-item').length;
-            
-            if (remainingNotifications === 0) {
-                notificationCount.style.display = 'none';
-            } else {
-                // Recalculate total ping count
-                let totalPings = 0;
-                document.querySelectorAll('.ping-count').forEach(counter => {
-                    totalPings += parseInt(counter.textContent) || 0;
-                });
-                notificationCount.style.display = 'flex';
-                notificationCount.textContent = totalPings;
-            }
-        }
-
-        // Function to check if notifications are empty and show message
-        function checkIfEmpty() {
-            const notificationList = document.getElementById('notificationList');
-            const remainingNotifications = document.querySelectorAll('.notification-item').length;
-            
-            if (remainingNotifications === 0) {
-                const noNotifications = document.createElement('div');
-                noNotifications.className = 'no-notifications';
-                noNotifications.id = 'noNotifications';
-                noNotifications.textContent = 'No ping notifications yet! 🌟';
-                notificationList.appendChild(noNotifications);
-                
-                // Hide clear all button
-                const clearAllBtn = document.getElementById('clearAllBtn');
-                if (clearAllBtn) clearAllBtn.style.display = 'none';
-            }
-        }
-    }
-
-    // MAIN PING FUNCTIONALITY - Regular ping buttons in the table
-    document.querySelectorAll('.ping-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const playerId = parseInt(this.dataset.playerId);
-            
-            // Double check - don't let users ping themselves
-            if (currentUserId && playerId === currentUserId) {
-                this.textContent = 'Cannot ping yourself';
-                this.style.background = '#f44336';
-                setTimeout(() => {
-                    this.textContent = 'Ping';
-                    this.style.background = '#00c853';
-                }, 2000);
-                return;
-            }
-            
-            postWithCSRF(`/ping/${playerId}`)
-                .then(response => {
-                    if (response.ok) {
-                        this.textContent = 'Pinged!';
-                        this.style.background = '#4caf50';
-                        setTimeout(() => {
-                            this.textContent = 'Ping';
-                            this.style.background = '#00c853';
-                        }, 2000);
-                    } else {
-                        // Handle different error codes
-                        return response.json().then(data => {
-                            this.textContent = data.error || 'Error';
-                            this.style.background = '#f44336';
-                            setTimeout(() => {
-                                this.textContent = 'Ping';
-                                this.style.background = '#00c853';
-                            }, 2000);
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    this.textContent = 'Failed';
-                    this.style.background = '#f44336';
-                    setTimeout(() => {
-                        this.textContent = 'Ping';
-                        this.style.background = '#00c853';
-                    }, 2000);
-                });
-        });
-    });
-
-</script>
-
-</body>
-</html>
+    body{transition:background-color 0.3s,color 0.3s}.toggle-theme:hover{transform:scale(1.1)}.admin-header::before{content:"";position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent,rgba(255,215,0,0.1),transparent);animation:shimmer 3s infinite;pointer-events:none}@keyframes shimmer{0%{transform:translateX(-100%) translateY(-100%) rotate(45deg)}100%{transform:translateX(100%) translateY(100%) rotate(45deg)}}.admin-title::before{content:"👑 ";animation:bounce 2s infinite}.admin-title::after{content:" 👑";animation:bounce 2s infinite 0.5s}@keyframes bounce{0%,20%,50%,80%,100%{transform:translateY(0)}40%{transform:translateY(-10px)}60%{transform:translateY(-5px)}}.edit-btn:hover{background-color:#5ab0d6}.logout-btn:hover,.delete-btn:hover{background-color:#d32f2f}.admin-edit-btn{background:linear-gradient(135deg,#ffd700,#ffed4e)!important;color:#000!important;border:2px solid #ffd700;box-shadow:0 0 15px rgba(255,215,0,0.4);text-shadow:none!important}.admin-edit-btn:hover{background:linear-gradient(135deg,#ffed4e,#fff176)!important;transform:translateY(-2px);box-shadow:0 5px 20px rgba(255,215,0,0.6)}.admin-logout-btn{background:linear-gradient(135deg,#ff6b6b,#ee5a52)!important;border:2px solid #ff5252;box-shadow:0 0 15px rgba(255,107,107,0.4)}.admin-logout-btn:hover{background:linear-gradient(135deg,#ff5252,#e53935)!important;transform:translateY(-2px);box-shadow:0 5px 20px rgba(255,107,107,0.6)}.ping-btn:hover{background-color:#00a847}.admin-profile-row{background:linear-gradient(45deg,#ff6b6b,#4ecdc4,#45b7d1,#96ceb4,#ffeaa7)!important;background-size:300% 300%!important;animation:adminGradient 3s ease infinite!important;border:3px solid #ffd700!important;box-shadow:0 0 25px rgba(255,215,0,0.7)!important;position:relative;z-index:2}.admin-profile-row::before{content:"👑 SUPREME ADMIN 👑";position:absolute;top:-18px;left:50%;transform:translateX(-50%);background:linear-gradient(45deg,#ffd700,#ffed4e);color:#000;padding:4px 16px;border-radius:20px;font-size:12px;font-weight:bold;box-shadow:0 3px 15px rgba(255,215,0,0.5);z-index:10;border:2px solid #fff;animation:glow 2s ease-in-out infinite alternate}@keyframes glow{from{box-shadow:0 3px 15px rgba(255,215,0,0.5)}to{box-shadow:0 6px 25px rgba(255,215,0,0.9)}}.admin-profile-row td{color:#000!important;font-weight:bold!important;text-shadow:1px 1px 2px rgba(255,255,255,0.8)!important;font-size:1.1em!important}body.light-mode .admin-profile-row td{color:#000!important;text-shadow:1px 1px 2px rgba(255,255,255,0.8)!important}@keyframes adminGradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}.admin-controls{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:20px;margin:20px;border-radius:15px;text-align:center;box-shadow:0 8px 25px rgba(102,126,234,0.4);border:3px solid #ffd700;position:relative;overflow:hidden}.admin-controls::before{content:"";position:absolute;top:-2px;left:-2px;right:-2px;bottom:-2px;background:linear-gradient(45deg,#ffd700,#ff6b6b,#4ecdc4,#ffd700);background-size:200% 200%;animation:borderGlow 3s linear infinite;border-radius:15px;z-index:-1}@keyframes borderGlow{0%{background-position:0% 50%}100%{background-position:200% 50%}}.admin-controls h2{margin:0 0 15px 0;font-size:1.4rem;text-shadow:2px 2px 4px rgba(0,0,0,0.3);animation:pulse 2s ease-in-out infinite alternate}.admin-controls p{margin:0;font-size:1rem;opacity:0.95;font-weight:500}@keyframes pulse{from{text-shadow:2px 2px 4px rgba(0,0,0,0.3)}to{text-shadow:2px 2px 8px rgba(255,215,0,0.6)}}.super-delete-btn{background:linear-gradient(135deg,#ff4757,#c44569)!important;color:white!important;border:2px solid #ff3838!important;box-shadow:0 4px 15px rgba(255,71,87,0.4)!important;animation:deleteButtonPulse 2s infinite!important}.super-delete-btn:hover{background:linear-gradient(135deg,#ff3838,#b83759)!important;transform:scale(1.05)!important;box-shadow:0 6px 20px rgba(255,71,87,0.6)!important}@keyframes deleteButtonPulse{0%{box-shadow:0 4px 15px rgba(255,71,87,0.4)}50%{box-shadow:0 4px 25px rgba(255,71,87,0.7)}100%{box-shadow:0 4px 15px rgba(255,71,87,0.4)}}table{box-shadow:0 0 15px rgba(150,200,255,0.15)}body.light-mode table{
