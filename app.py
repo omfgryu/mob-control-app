@@ -1,7 +1,7 @@
 # app.py
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask import session, Flask, render_template, request, jsonify, redirect, url_for, flash, g
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import pytz
 from geopy.geocoders import Nominatim
 from timezonefinder import TimezoneFinder
@@ -71,29 +71,69 @@ def get_db_connection():
     """Helper function to get a fresh database connection"""
     return psycopg2.connect(DATABASE_URL)
 
-def get_user_pings(user_id):
-    """Get unread pings for a user with sender details"""
+def cleanup_old_pings():
+    """Auto-cleanup: Delete pings older than 24 hours and limit to 10 per user"""
     try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Delete pings older than 24 hours
+        cur.execute("""
+            DELETE FROM pings 
+            WHERE timestamp < %s
+        """, (datetime.now() - timedelta(hours=24),))
+        
+        # For each receiver, keep only the 10 most recent pings
+        cur.execute("""
+            DELETE FROM pings 
+            WHERE id NOT IN (
+                SELECT id FROM (
+                    SELECT id, ROW_NUMBER() OVER (PARTITION BY receiver_id ORDER BY timestamp DESC) as rn
+                    FROM pings
+                ) ranked 
+                WHERE rn <= 10
+            )
+        """)
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        print("Ping cleanup completed")
+        
+    except Exception as e:
+        print(f"Error during ping cleanup: {e}")
+
+def get_user_pings(user_id):
+    """Get grouped ping notifications for a user"""
+    try:
+        # Auto-cleanup old pings first
+        cleanup_old_pings()
+        
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
         
+        # Get grouped pings - count by sender and get latest info
         cur.execute("""
-            SELECT p.id, p.timestamp, u.name as username, u.country, u.tier, p.sender_id
+            SELECT 
+                p.sender_id,
+                u.name as username,
+                u.country,
+                COUNT(*) as ping_count,
+                MAX(p.timestamp) as latest_timestamp,
+                MIN(p.id) as first_ping_id
             FROM pings p
             JOIN players u ON p.sender_id = u.id
             WHERE p.receiver_id = %s AND p.is_read = FALSE
-            ORDER BY p.timestamp DESC
+            GROUP BY p.sender_id, u.name, u.country
+            ORDER BY latest_timestamp DESC
         """, (user_id,))
         
-        pings = cur.fetchall()
+        ping_groups = cur.fetchall()
         cur.close()
         conn.close()
         
-        # Add local time for each ping
-        for ping in pings:
-            ping['local_time'] = get_local_time_for_country(ping['country'])
+        return ping_groups
         
-        return pings
     except Exception as e:
         print(f"Error getting pings: {e}")
         return []
@@ -447,7 +487,7 @@ def players():
         player_dict['local_time'] = local_time
         players_with_local_time.append(player_dict)
 
-    # Get ping notifications for current user
+    # Get grouped ping notifications for current user
     user_pings = []
     if 'user_id' in session:
         user_pings = get_user_pings(session['user_id'])
@@ -519,6 +559,33 @@ def ping_player(player_id):
             else:
                 conn.close()
         return jsonify({'error': 'Failed to send ping'}), 500
+
+@app.route("/mark_ping_read/<int:sender_id>", methods=["POST"])
+def mark_ping_read(sender_id):
+    """Mark all pings from a specific sender as read"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    user_id = session['user_id']
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Mark all pings from this sender to current user as read
+        cur.execute("""
+            UPDATE pings SET is_read = TRUE 
+            WHERE sender_id = %s AND receiver_id = %s AND is_read = FALSE
+        """, (sender_id, user_id))
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        print(f"Mark ping read error: {e}")
+        return jsonify({'error': 'Database error'}), 500
 
 @csrf.exempt
 @app.route("/get_time", methods=["POST"])
