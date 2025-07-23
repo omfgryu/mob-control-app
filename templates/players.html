@@ -507,7 +507,7 @@ document.addEventListener('DOMContentLoaded', function() {
             {% endfor %}
         </select>
     </div>
-
+{% if session.get('user_id') %}
     <div class="notification-system">
     <!-- Main notification icon -->
     <div id="notificationIcon" onclick="toggleNotificationPopup()" style="
