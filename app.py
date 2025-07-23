@@ -128,7 +128,7 @@ try:
         minconn=2,
         maxconn=10,
         dsn=DATABASE_URL,
-        options='-c statement_timeout=30000'
+        
     )
     print("✅ Optimized connection pool created successfully!")
 except Exception as e:
