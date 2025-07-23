@@ -9,166 +9,10 @@
   <title>Mob Control Login</title>
   <meta name="author" content="Amrit Sahai">
   <meta name="email" content="amritsahai117@gmail.com">
+  
+  <!-- ✅ CRITICAL CSS - Essential layout, colors, structure -->
   <style>
-    body {
-      background-color: #1a1d2e;
-      color: #e0e0e0;
-      font-family: 'Segoe UI', sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      transition: background-color 0.3s, color 0.3s;
-      margin: 0;
-      padding: 0;
-    }
-
-    .form-container {
-      background-color: #272b3f;
-      padding: 30px;
-      border-radius: 15px;
-      width: 400px;
-      max-width: 90vw;
-      box-shadow: 0 0 15px rgba(150, 200, 255, 0.15);
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #9ecbff;
-    }
-
-    label {
-      display: block;
-      margin: 10px 0 5px;
-    }
-
-    input {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      margin-bottom: 15px;
-      background-color: #202437;
-      color: #ffffff;
-      font-size: 14px;
-    }
-
-    button {
-      width: 100%;
-      background-color: #6ec1e4;
-      border: none;
-      padding: 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      color: #fff;
-    }
-
-    button:hover {
-      background-color: #5ab0d6;
-    }
-
-    .toggle-theme {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      cursor: pointer;
-      font-size: 20px;
-      color: #6ec1e4;
-      z-index: 1000;
-    }
-
-    body.light-mode {
-      background-color: #f4f4f4;
-      color: #000;
-    }
-
-    .light-mode .form-container {
-      background-color: #ffffff;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    .light-mode input {
-      background-color: #f0f0f0;
-      color: #000;
-    }
-
-    .light-mode .toggle-theme {
-      color: #00695c;
-    }
-
-    .flash {
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      font-weight: bold;
-      font-size: 14px;
-      text-align: center;
-    }
-
-    .flash.success {
-      background-color: #b7f7cc;
-      color: #14532d;
-    }
-
-    .flash.error {
-      background-color: #fcbaba;
-      color: #7f1d1d;
-    }
-
-    /* Remember me checkbox styling */
-    .remember-me {
-      display: flex;
-      align-items: center;
-      margin-bottom: 15px;
-      gap: 8px;
-    }
-
-    .remember-me input[type="checkbox"] {
-      width: auto;
-      margin: 0;
-      transform: scale(1.2);
-    }
-
-    .remember-me label {
-      margin: 0;
-      font-size: 14px;
-      color: #9ecbff;
-      cursor: pointer;
-    }
-
-    .light-mode .remember-me label {
-      color: #00695c;
-    }
-
-    @media screen and (max-width: 600px) {
-      body {
-        align-items: flex-start;
-        padding-top: 30px;
-        height: auto;
-      }
-
-      .form-container {
-        width: 90%;
-        padding: 20px;
-      }
-
-      .toggle-theme {
-        top: 15px;
-        right: 15px;
-        font-size: 22px;
-      }
-
-      h2 {
-        font-size: 20px;
-      }
-
-      input, button {
-        font-size: 14px;
-        padding: 10px;
-      }
-    }
+    body{background-color:#1a1d2e;color:#e0e0e0;font-family:'Segoe UI',sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;padding:0}body.light-mode{background-color:#f4f4f4;color:#000}.form-container{background-color:#272b3f;padding:30px;border-radius:15px;width:400px;max-width:90vw}body.light-mode .form-container{background-color:#ffffff}h2{text-align:center;margin-bottom:20px;color:#9ecbff}label{display:block;margin:10px 0 5px}input{width:100%;padding:10px;border-radius:8px;border:none;margin-bottom:15px;background-color:#202437;color:#ffffff;font-size:14px}body.light-mode input{background-color:#f0f0f0;color:#000}button{width:100%;background-color:#6ec1e4;border:none;padding:10px;border-radius:8px;cursor:pointer;font-weight:bold;color:#fff}.toggle-theme{position:absolute;top:20px;right:20px;cursor:pointer;font-size:20px;color:#6ec1e4;z-index:1000}body.light-mode .toggle-theme{color:#00695c}.flash{padding:10px;border-radius:8px;margin-bottom:10px;font-weight:bold;font-size:14px;text-align:center}.flash.success{background-color:#b7f7cc;color:#14532d}.flash.error{background-color:#fcbaba;color:#7f1d1d}.remember-me{display:flex;align-items:center;margin-bottom:15px;gap:8px}.remember-me input[type="checkbox"]{width:auto;margin:0;transform:scale(1.2)}.remember-me label{margin:0;font-size:14px;color:#9ecbff;cursor:pointer}body.light-mode .remember-me label{color:#00695c}
   </style>
 </head>
 <body>
@@ -205,11 +49,15 @@
   <button type="submit">Login</button>
 </form>
 
-
   <p style="text-align: center; margin-top: 20px; font-size: 0.9em;">
     Don't have an account? <a href="{{ url_for('register') }}" style="color: #9ecbff;">Register here</a>
   </p>
 </div>
+
+<!-- ✅ NON-CRITICAL CSS - Effects, animations, mobile responsive -->
+<style>
+  body{transition:background-color 0.3s,color 0.3s}button:hover{background-color:#5ab0d6}.form-container{box-shadow:0 0 15px rgba(150,200,255,0.15)}body.light-mode .form-container{box-shadow:0 0 10px rgba(0,0,0,0.1)}@media screen and (max-width:600px){body{align-items:flex-start;padding-top:30px;height:auto}.form-container{width:90%;padding:20px}.toggle-theme{top:15px;right:15px;font-size:22px}h2{font-size:20px}input,button{font-size:14px;padding:10px}}
+</style>
 
 <script>
   const toggle = document.getElementById('theme-toggle');
