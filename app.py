@@ -19,6 +19,9 @@ from functools import lru_cache
 import atexit
 import hashlib
 import threading
+import threading
+import psutil  # ADD THIS
+import gc      # ADD THIS
 
 app = Flask(__name__)
 csrf = CSRFProtect(app)
@@ -30,6 +33,19 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 MAX_WEBSOCKET_USERS = 80  # Reserve 20 slots for new users
 MAX_TOTAL_CAPACITY = 100  # Total server capacity
 PRIORITY_RESERVE = 20     # Reserved slots for new registrations
+HEALTH_CHECK_INTERVAL = 60
+MEMORY_WARNING_MB = 400
+CPU_WARNING_PERCENT = 70
+DB_WARNING_CONNECTIONS = 7
+
+health_status = {
+    'last_check': 0,
+    'memory_mb': 0,
+    'cpu_percent': 0,
+    'active_users': 0,
+    'status': 'healthy',
+    'warnings': []
+}
 MAX_PINGS_PER_MINUTE = 8  # Reduced to save resources
 MEMORY_CLEANUP_INTERVAL = 300  # 5 minutes
 CONNECTION_TIMEOUT = 60  # 1 minute idle timeout
@@ -1075,6 +1091,196 @@ def mark_ping_read(sender_id):
 @csrf.exempt
 @app.route("/get_time", methods=["POST"])
 def get_time():
+    # 📍 ADD THIS RIGHT AFTER your get_time() function:
+
+def check_system_health():
+    """Simple health check - run every minute"""
+    global health_status
+    current_time = time.time()
+    
+    # Only check once per minute
+    if current_time - health_status['last_check'] < HEALTH_CHECK_INTERVAL:
+        return health_status
+    
+    try:
+        # Get current metrics
+        memory_info = psutil.virtual_memory()
+        memory_mb = memory_info.used / (1024 * 1024)
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        
+        # Update health status
+        health_status.update({
+            'last_check': current_time,
+            'memory_mb': round(memory_mb, 1),
+            'cpu_percent': round(cpu_percent, 1),
+            'active_users': len(active_users),
+            'warnings': []
+        })
+        
+        # Check for problems
+        if memory_mb > MEMORY_WARNING_MB:
+            health_status['warnings'].append(f'High memory: {memory_mb:.1f}MB')
+            print(f"⚠️ MEMORY WARNING: {memory_mb:.1f}MB (limit ~512MB)")
+            
+        if cpu_percent > CPU_WARNING_PERCENT:
+            health_status['warnings'].append(f'High CPU: {cpu_percent:.1f}%')
+            print(f"⚠️ CPU WARNING: {cpu_percent:.1f}%")
+            
+        if len(active_users) > 85:
+            health_status['warnings'].append(f'High user load: {len(active_users)} users')
+            print(f"⚠️ USER LOAD WARNING: {len(active_users)} users")
+        
+        # Set overall status
+        if health_status['warnings']:
+            health_status['status'] = 'warning'
+            
+            # Emergency cleanup if things are bad
+            if memory_mb > MEMORY_WARNING_MB or len(active_users) > 90:
+                print("🚨 EMERGENCY CLEANUP TRIGGERED")
+                emergency_cleanup()
+        else:
+            health_status['status'] = 'healthy'
+            
+    except Exception as e:
+        print(f"Health check error: {e}")
+        health_status['status'] = 'error'
+    
+    return health_status
+
+def emergency_cleanup():
+    """Emergency cleanup when resources are low"""
+    try:
+        print("🧹 Running emergency cleanup...")
+        
+        # Force memory cleanup
+        gc.collect()
+        
+        # Cleanup old WebSocket connections
+        cleanup_memory()
+        
+        # Aggressive user cleanup (remove 20% of least active users)
+        if len(active_users) > 70:
+            cleanup_target = len(active_users) - 60  # Target 60 users max
+            
+            # Calculate activity scores
+            user_scores = {}
+            current_time = time.time()
+            for user_id in active_users:
+                last_seen = active_users[user_id].get('last_seen', 0)
+                score = max(0, 300 - (current_time - last_seen))  # Score based on recent activity
+                user_scores[user_id] = score
+            
+            # Remove least active users
+            sorted_users = sorted(user_scores.items(), key=lambda x: x[1])
+            for i in range(min(cleanup_target, len(sorted_users))):
+                user_id_to_remove = sorted_users[i][0]
+                username = active_users[user_id_to_remove]['username']
+                
+                # Send emergency message
+                socketio.emit('emergency_disconnect', {
+                    'message': 'Server maintenance in progress. Reconnect in 2 minutes for priority access!',
+                    'reconnect_delay': 120,
+                    'priority_token': 'emergency_' + str(int(time.time()))
+                }, room=f"user_{user_id_to_remove}")
+                
+                del active_users[user_id_to_remove]
+                print(f"🚨 Emergency disconnect: {username}")
+        
+        print(f"✅ Emergency cleanup complete. Users: {len(active_users)}")
+        
+    except Exception as e:
+        print(f"Emergency cleanup error: {e}")
+
+def background_health_monitor():
+    """Background thread to monitor health continuously"""
+    while True:
+        try:
+            health = check_system_health()
+            
+            # Log significant events
+            if health['status'] != 'healthy':
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                print(f"[{timestamp}] Health Status: {health['status']}")
+                if health['warnings']:
+                    for warning in health['warnings']:
+                        print(f"[{timestamp}] WARNING: {warning}")
+            
+            time.sleep(HEALTH_CHECK_INTERVAL)
+            
+        except Exception as e:
+            print(f"Health monitor error: {e}")
+            time.sleep(60)  # Wait 1 minute before retrying
+
+@app.route('/health')
+def health_check():
+    """Public health check endpoint"""
+    health = check_system_health()
+    
+    # Public version (don't expose sensitive details)
+    public_health = {
+        'status': health['status'],
+        'active_users': health['active_users'],
+        'capacity_used': f"{(health['active_users']/MAX_TOTAL_CAPACITY)*100:.1f}%",
+        'last_check': datetime.fromtimestamp(health['last_check']).strftime('%H:%M:%S')
+    }
+    
+    if health['status'] == 'healthy':
+        return jsonify(public_health), 200
+    else:
+        return jsonify(public_health), 503  # Service Unavailable
+
+@app.route('/admin/health')
+def admin_health():
+    """Detailed health check for admins only"""
+    if session.get('role') != 'admin':
+        return "Unauthorized", 403
+    
+    health = check_system_health()
+    
+    # Add database health
+    db_health = 'unknown'
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.fetchone()
+        cur.close()
+        db_health = 'healthy'
+        release_db_connection(conn)
+    except Exception as e:
+        db_health = f'error: {str(e)[:50]}'
+    
+    detailed_health = {
+        **health,
+        'database_status': db_health,
+        'memory_limit_mb': 512,  # Free tier limit
+        'memory_usage_percent': f"{(health['memory_mb']/512)*100:.1f}%",
+        'connection_pool_size': len(active_users),
+        'max_connections': MAX_TOTAL_CAPACITY,
+        'ping_rates_active': len(user_ping_rates),
+        'server_uptime': time.time() - app.start_time if hasattr(app, 'start_time') else 'unknown'
+    }
+    
+    return jsonify(detailed_health)
+
+@app.route('/admin/force-cleanup')
+def force_cleanup():
+    """Emergency cleanup endpoint for admins"""
+    if session.get('role') != 'admin':
+        return "Unauthorized", 403
+    
+    try:
+        emergency_cleanup()
+        return jsonify({
+            'status': 'success',
+            'message': 'Emergency cleanup completed',
+            'active_users_after': len(active_users)
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
     data = request.get_json()
     country = data.get("country")
     if not country:
@@ -1086,6 +1292,11 @@ def get_time():
         print(f"Error in /get_time: {e}")
         return jsonify({"time": "Error", "timezone": None}), 500
 
+app.start_time = time.time()
+health_thread = threading.Thread(target=background_health_monitor, daemon=True)
+health_thread.start()
+print("💗 Health monitoring started")
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     print("🧠 Smart Load Management enabled!")
@@ -1093,4 +1304,5 @@ if __name__ == "__main__":
     print(f"📊 Total capacity: {MAX_TOTAL_CAPACITY}")  
     print(f"🔒 Reserved for new users: {PRIORITY_RESERVE}")
     print("✅ No more 'Server Busy' messages for new registrations!")
+    print("💗 Health monitoring active!")
     socketio.run(app, host="0.0.0.0", port=port, debug=True)
