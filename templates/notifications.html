@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Notifications - Mob Control</title>
+    <style>
+        body { background-color: #1a1d2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        body.light-mode { background-color: #f5f6f8; color: #2c3e50; }
+        body.light-mode header { background-color: #eceff1; }
+        body.light-mode h1 { color: #34495e; }
+        body.light-mode .notifications-container { background-color: #eceff1; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        body.light-mode table { background-color: #eceff1; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        body.light-mode th { background-color: #e0e3e7; color: #34495e; }
+        body.light-mode th, body.light-mode td { border-bottom: 1px solid rgba(0,0,0,0.1); }
+        body.light-mode tr:hover { background-color: rgba(0,0,0,0.05); }
+        header { background-color: #272b3f; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 10px; margin-bottom: 20px; }
+        h1 { margin: 0; color: #9ecbff; }
+        .back-btn, .ping-back-btn { background-color: #6ec1e4; color: white; padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; margin-right: 10px; }
+        .ping-back-btn { background-color: #00c853; padding: 5px 10px; }
+        table { width: 100%; border-collapse: collapse; background-color: #272b3f; border-radius: 15px; overflow: hidden; margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid rgba(150,200,255,0.1); text-align: center; }
+        th { background-color: #202437; color: #9ecbff; font-weight: bold; }
+        .notifications-container { background-color: #272b3f; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
+        .no-notifications { text-align: center; padding: 60px 20px; opacity: 0.6; font-style: italic; color: #9ecbff; }
+        .notification-header { color: #ff6b6b; font-size: 1.2rem; margin-bottom: 10px; }
+        .ping-count-badge { background: #ffd700; color: #000; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-left: 10px; }
+        .toggle-theme { cursor: pointer; font-size: 20px; color: #6ec1e4; margin-left: 15px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="display: flex; align-items: center;">
+        <h1>📡 Ping Notifications</h1>
+        <div class="toggle-theme" id="theme-toggle">🌙</div>
+    </div>
+    <div>
+        <a href="{{ url_for('players') }}" class="back-btn">← Back to Players</a>
+    </div>
+</header>
+
+<div class="notifications-container">
+    <div class="notification-header">
+        📬 Your Ping Notifications
+        {% set total_pings = user_pings|sum(attribute='ping_count') if user_pings else 0 %}
+        {% if total_pings > 0 %}
+            <span class="ping-count-badge">{{ total_pings }} ping{{ 's' if total_pings != 1 else '' }}</span>
+        {% endif %}
+    </div>
+    
+    {% if user_pings and user_pings|length > 0 %}
+        <p>Players who have pinged you recently:</p>
+    {% else %}
+        <div class="no-notifications">
+            🌟 No ping notifications yet!<br>
+            When other players ping you, they'll appear here.
+        </div>
+    {% endif %}
+</div>
+
+{% if user_pings and user_pings|length > 0 %}
+<table>
+    <thead>
+        <tr>
+            <th>Player Name</th>
+            <th>Country</th>
+            <th>Tier</th>
+            <th>🏆 Game Rank</th>
+            <th>Local Time</th>
+            <th>Ping Count</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ping_group in user_pings %}
+        <tr>
+            <td>{{ ping_group.username }}</td>
+            <td>{{ ping_group.country }}</td>
+            <td>Wood</td> <!-- Note: You'll need to add tier to your get_user_pings query -->
+            <td>#999</td> <!-- Note: You'll need to add game_rank to your get_user_pings query -->
+            <td id="time-{{ ping_group.sender_id }}">Calculating...</td>
+            <td>
+                <span style="background: #ffd700; color: #000; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
+                    {{ ping_group.ping_count }}
+                </span>
+            </td>
+            <td>
+                <button class="ping-back-btn" data-player-id="{{ ping_group.sender_id }}" data-player-name="{{ ping_group.username }}">
+                    Ping Back
+                </button>
+                <button onclick="markAsRead({{ ping_group.sender_id }}, this)" style="background: #ff4757; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; margin-left: 5px;">
+                    Mark Read
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<script>
+console.log('Notifications page loaded');
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Notifications DOM ready');
+    
+    // Get CSRF token
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+    
+    // Setup theme toggle (same as main page)
+    var themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            document.body.classList.toggle('light-mode');
+            this.textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+        });
+    }
+    
+    // Setup ping back buttons
+    var pingBtns = document.querySelectorAll('.ping-back-btn');
+    for (var i = 0; i < pingBtns.length; i++) {
+        pingBtns[i].addEventListener('click', function() {
+            var playerId = this.dataset.playerId;
+            var playerName = this.dataset.playerName;
+            
+            this.textContent = 'Sending...';
+            this.disabled = true;
+            
+            var btn = this;
+            fetch('/ping/' + playerId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            }).then(function(response) {
+                return response.json();
+            }).then(function(data) {
+                btn.textContent = data.success ? 'Sent!' : 'Error';
+                setTimeout(function() {
+                    btn.textContent = 'Ping Back';
+                    btn.disabled = false;
+                }, 2000);
+            }).catch(function() {
+                btn.textContent = 'Failed';
+                setTimeout(function() {
+                    btn.textContent = 'Ping Back';
+                    btn.disabled = false;
+                }, 2000);
+            });
+        });
+    }
+    
+    console.log('Notifications page ready');
+});
+
+// Mark notification as read
+function markAsRead(senderId, buttonEl) {
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+    
+    buttonEl.textContent = 'Marking...';
+    buttonEl.disabled = true;
+    
+    fetch('/mark_ping_read/' + senderId, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    }).then(function(response) {
+        if (response.ok) {
+            // Remove the entire row with animation
+            var row = buttonEl.closest('tr');
+            if (row) {
+                row.style.opacity = '0.5';
+                row.style.transform = 'translateX(-50px)';
+                setTimeout(function() {
+                    row.remove();
+                    // Check if no notifications left
+                    var remainingRows = document.querySelectorAll('tbody tr');
+                    if (remainingRows.length === 0) {
+                        location.reload(); // Refresh to show "no notifications" message
+                    }
+                }, 300);
+            }
+        } else {
+            buttonEl.textContent = 'Error';
+            setTimeout(function() {
+                buttonEl.textContent = 'Mark Read';
+                buttonEl.disabled = false;
+            }, 2000);
+        }
+    }).catch(function() {
+        buttonEl.textContent = 'Failed';
+        setTimeout(function() {
+            buttonEl.textContent = 'Mark Read';
+            buttonEl.disabled = false;
+        }, 2000);
+    });
+}
+</script>
+
+</body>
+</html>

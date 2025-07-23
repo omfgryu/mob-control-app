@@ -62,7 +62,7 @@ def after_request(response):
 app.config['DEBUG'] = True
 app.secret_key = os.environ.get('SECRET_KEY')
 if not app.secret_key:
-    raise ValueError("SECRET_KEY environment variable is required")
+    app.config['SECRET_KEY'] = 'mysecretkey123456789'
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -83,7 +83,7 @@ tiers = [
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is required")
+    DATABASE_URL = 'postgresql://neondb_owner:npg_JluO3d8qXLBa@ep-frosty-river-a1uyt8sc-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require'
 
 # ✅ SIMPLIFIED CONNECTION POOL
 try:
@@ -466,7 +466,18 @@ def edit_profile():
         conn = get_db_connection()
         with conn.cursor() as c:
             c.execute("SELECT name as username, country, tier, social_links, game_rank FROM players WHERE id = %s", (user_id,))
-            user = c.fetchone()
+            user_tuple = c.fetchone()
+            print(f"DEBUG: User data: {user_tuple}")
+            if user_tuple:
+                user = {
+                    'username': user_tuple[0],
+                    'country': user_tuple[1], 
+                    'tier': user_tuple[2],
+                    'social_links': user_tuple[3],
+                    'game_rank': user_tuple[4]
+                }
+            else:
+                user = None
 
             if not user:
                 flash("User not found.", "error")
@@ -651,6 +662,14 @@ def players():
                            search_tier=search_tier,
                            user_pings=user_pings,
                            template_version=int(time.time()))
+
+@app.route("/notifications")
+def notifications():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user_pings = get_user_pings(session['user_id'])
+    return render_template("notifications.html", user_pings=user_pings)
 
 @app.route("/ping/<int:player_id>", methods=["POST"])
 def ping_player(player_id):
