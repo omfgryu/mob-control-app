@@ -432,7 +432,7 @@
             box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
             animation: gentleFloat 3s ease-in-out infinite;
             transition: all 0.3s ease;
-            z-index: 5;
+            z-index: 15;
         }
 
         .light-mode .notification-icon {
@@ -825,6 +825,7 @@
                 <th>Region</th>
                 <th>Tier</th>
                 <th>Local Time</th>
+                <th>Social Links</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -843,6 +844,7 @@
                 <td class="local-time" data-country="{{ player['country'] }}">
                     {{ player['local_time'] if player['local_time'] != 'N/A' else 'Calculating...' }}
                 </td>
+                <td>{{ player['social_links'] if player['social_links'] else 'N/A' }}</td>
                 <td class="actions-cell">
                     {% if session.get('user_id') == player['id'] %}
                         <a href="{{ url_for('edit_profile') }}" class="edit-btn {% if session.get('role') == 'admin' %}admin-edit-btn{% endif %}">
