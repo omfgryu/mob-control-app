@@ -1,4 +1,4 @@
-# app.py
+# app.py - Complete version with Smart Load Management
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask import session, Flask, render_template, request, jsonify, redirect, url_for, flash, g, send_from_directory, make_response
 from flask_socketio import SocketIO, emit, join_room, leave_room
@@ -18,6 +18,7 @@ import time
 from functools import lru_cache
 import atexit
 import hashlib
+import threading
 
 app = Flask(__name__)
 csrf = CSRFProtect(app)
@@ -25,60 +26,55 @@ csrf = CSRFProtect(app)
 # ✅ REAL-TIME WEBSOCKET SETUP
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
-# Store active users for real-time features
+# ✅ SMART LOAD MANAGEMENT SETTINGS
+MAX_WEBSOCKET_USERS = 80  # Reserve 20 slots for new users
+MAX_TOTAL_CAPACITY = 100  # Total server capacity
+PRIORITY_RESERVE = 20     # Reserved slots for new registrations
+MAX_PINGS_PER_MINUTE = 8  # Reduced to save resources
+MEMORY_CLEANUP_INTERVAL = 300  # 5 minutes
+CONNECTION_TIMEOUT = 60  # 1 minute idle timeout
+
+# Store active users and management data
 active_users = {}  # {user_id: {'username': 'name', 'sid': 'socket_id', 'last_seen': timestamp}}
+user_ping_rates = defaultdict(list)  # {user_id: [timestamp1, timestamp2, ...]}
+user_activity_scores = {}  # {user_id: activity_score}
+last_cleanup = time.time()
+last_activity_cleanup = time.time()
 
 # ✅ FRONTEND CACHING - Cache static files for 1 year, but allow updates
 @app.route('/static/<path:filename>')
 def static_files(filename):
     """Serve static files with optimized caching headers"""
     try:
-        # Create response for static file
         response = make_response(send_from_directory('static', filename))
-        
-        # Get file extension for different cache strategies
         file_ext = filename.split('.')[-1].lower()
         
         if file_ext in ['css', 'js']:
-            # CSS/JS files - Cache for 30 days but allow updates
             response.headers['Cache-Control'] = 'public, max-age=2592000'  # 30 days
             response.headers['ETag'] = f'"{hash(filename)}"'
-            
         elif file_ext in ['mp3', 'wav', 'ogg', 'mp4']:
-            # Audio/Video files - Cache for 1 year (rarely change)
             response.headers['Cache-Control'] = 'public, max-age=31536000'  # 1 year
-            
         elif file_ext in ['png', 'jpg', 'jpeg', 'gif', 'ico', 'svg']:
-            # Images - Cache for 1 week
             response.headers['Cache-Control'] = 'public, max-age=604800'  # 1 week
-            
         else:
-            # Other files - Cache for 1 hour
             response.headers['Cache-Control'] = 'public, max-age=3600'  # 1 hour
         
-        # Add compression hint
         response.headers['Vary'] = 'Accept-Encoding'
-        
         return response
-        
     except Exception as e:
         print(f"Static file error: {e}")
         return "File not found", 404
 
-# Add after_request decorator to the app
 @app.after_request
 def after_request(response):
-    # Only apply no-cache headers to HTML pages, not static files
     if request.endpoint != 'static_files':
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
     
-    # Add performance headers for all responses
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
-    
     return response
 
 app.config['DEBUG'] = True
@@ -90,13 +86,8 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = 604800  # 1 week for Remember Me
 
-# Move admin credentials to environment variables for security
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'omfgryu')
 ADMIN_PIN = os.environ.get('ADMIN_PIN', 'gogetassj4')
-
-#ip_timestamps = defaultdict(list)
-#MAX_ATTEMPTS = 3
-#WINDOW_SECONDS = 600
 
 with open(os.path.join(os.path.dirname(__file__), "countries.json"), "r", encoding="utf-8") as f:
     countries = json.load(f)
@@ -112,37 +103,29 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is required")
 
-# ✅ OPTIMIZED CONNECTION POOL - Better configuration for free tier
+# ✅ OPTIMIZED CONNECTION POOL
 try:
-    # Optimized pool settings for better performance on free tier:
-    # - min_conn=2: Always keep 2 connections ready (faster response)
-    # - max_conn=10: Reduced from 20 to stay within free tier limits
-    # - Better resource management
     connection_pool = psycopg2.pool.ThreadedConnectionPool(
-        minconn=2,           # Keep minimum 2 connections ready
-        maxconn=10,          # Max 10 connections (free tier friendly)
+        minconn=2,
+        maxconn=10,
         dsn=DATABASE_URL,
-        # Connection optimization parameters
-        options='-c statement_timeout=30000'  # 30 second timeout
+        options='-c statement_timeout=30000'
     )
     print("✅ Optimized connection pool created successfully!")
 except Exception as e:
     print(f"❌ Error creating connection pool: {e}")
     connection_pool = None
 
-# ✅ OPTIMIZED CONNECTION MANAGEMENT
 def get_db_connection():
     """Optimized database connection with proper pool management"""
     if connection_pool:
         try:
-            # Get connection from pool (much faster than creating new connection)
             conn = connection_pool.getconn()
             if conn:
                 return conn
         except Exception as e:
             print(f"Pool connection error: {e}")
     
-    # Fallback to direct connection if pool fails
     print("Using fallback connection...")
     return psycopg2.connect(DATABASE_URL)
 
@@ -163,7 +146,6 @@ def release_db_connection(conn):
         except:
             pass
 
-# ✅ GRACEFUL SHUTDOWN - Properly close pool on app shutdown
 def cleanup_connection_pool():
     """Close all connections in pool on shutdown"""
     global connection_pool
@@ -179,11 +161,9 @@ atexit.register(cleanup_connection_pool)
 geolocator = Nominatim(user_agent="mob_control_app", timeout=5)
 tz_finder = TimezoneFinder()
 
-# ✅ TEMPLATE CACHE BUSTING - Add version numbers to static files
 def cache_bust_static(filename):
     """Add cache busting parameter to static files"""
     try:
-        # Use file modification time as version
         file_path = os.path.join('static', filename)
         if os.path.exists(file_path):
             mtime = str(int(os.path.getmtime(file_path)))
@@ -192,38 +172,210 @@ def cache_bust_static(filename):
     except:
         return filename
 
-# Make cache_bust_static available in templates
 @app.context_processor
 def utility_processor():
     return dict(cache_bust=cache_bust_static)
 
-# ✅ REAL-TIME WEBSOCKET EVENT HANDLERS
+# ✅ SMART LOAD MANAGEMENT FUNCTIONS
+
+def calculate_user_activity_score(user_id):
+    """Calculate user activity score for prioritization"""
+    if user_id not in active_users:
+        return 0
+    
+    user_data = active_users[user_id]
+    current_time = time.time()
+    
+    connection_time = current_time - user_data.get('connect_time', current_time)
+    last_seen = current_time - user_data.get('last_seen', current_time)
+    ping_activity = len(user_ping_rates.get(user_id, []))
+    
+    score = 0
+    
+    # Recent activity (0-100 points)
+    if last_seen < 60:
+        score += 100
+    elif last_seen < 300:
+        score += 50
+    elif last_seen < 900:
+        score += 20
+    
+    # Ping activity (0-50 points)
+    score += min(ping_activity * 10, 50)
+    
+    # Connection duration bonus (0-30 points)
+    if connection_time > 300:
+        score += 30
+    elif connection_time > 60:
+        score += 15
+    
+    return score
+
+def smart_connection_management():
+    """Smart connection management - prioritize active users"""
+    current_capacity = len(active_users)
+    
+    if current_capacity < MAX_WEBSOCKET_USERS:
+        return 'allow'
+    
+    if current_capacity >= MAX_TOTAL_CAPACITY:
+        return 'need_cleanup'
+    
+    return 'degraded'
+
+def cleanup_inactive_users():
+    """Remove least active users to make room"""
+    if len(active_users) <= MAX_WEBSOCKET_USERS:
+        return
+    
+    current_time = time.time()
+    
+    # Calculate activity scores for all users
+    user_scores = {}
+    for user_id in active_users:
+        user_scores[user_id] = calculate_user_activity_score(user_id)
+    
+    # Sort by activity score (lowest first)
+    sorted_users = sorted(user_scores.items(), key=lambda x: x[1])
+    
+    # Remove least active users until we're under the limit
+    users_to_remove = len(active_users) - MAX_WEBSOCKET_USERS
+    
+    for i in range(min(users_to_remove, len(sorted_users))):
+        user_id_to_remove = sorted_users[i][0]
+        
+        # Don't remove very recently connected users
+        if current_time - active_users[user_id_to_remove].get('connect_time', 0) < 120:
+            continue
+        
+        username = active_users[user_id_to_remove]['username']
+        
+        # Send graceful disconnect message
+        socketio.emit('graceful_disconnect', {
+            'message': 'Server optimization in progress. Please reconnect in a moment!',
+            'reconnect_delay': 30
+        }, room=f"user_{user_id_to_remove}")
+        
+        del active_users[user_id_to_remove]
+        print(f"🔄 Gracefully disconnected inactive user: {username} (score: {sorted_users[i][1]})")
+        
+        if len(active_users) <= MAX_WEBSOCKET_USERS:
+            break
+
+def cleanup_memory():
+    """Clean up inactive users and old data"""
+    global active_users, last_cleanup
+    current_time = time.time()
+    
+    if current_time - last_cleanup < MEMORY_CLEANUP_INTERVAL:
+        return
+    
+    print("🧹 Running memory cleanup...")
+    
+    # Remove users inactive for more than 5 minutes
+    inactive_users = []
+    for user_id, user_data in active_users.items():
+        if current_time - user_data.get('last_seen', 0) > 300:
+            inactive_users.append(user_id)
+    
+    for user_id in inactive_users:
+        del active_users[user_id]
+        print(f"🗑️ Removed inactive user: {user_id}")
+    
+    # Clean old ping rate data
+    for user_id in list(user_ping_rates.keys()):
+        user_ping_rates[user_id] = [
+            timestamp for timestamp in user_ping_rates[user_id]
+            if current_time - timestamp < 60
+        ]
+        if not user_ping_rates[user_id]:
+            del user_ping_rates[user_id]
+    
+    last_cleanup = current_time
+    print(f"✅ Memory cleanup complete. Active users: {len(active_users)}")
+
+def check_ping_rate_limit(user_id):
+    """Check if user is sending pings too fast"""
+    current_time = time.time()
+    
+    user_ping_rates[user_id] = [
+        timestamp for timestamp in user_ping_rates[user_id]
+        if current_time - timestamp < 60
+    ]
+    
+    if len(user_ping_rates[user_id]) >= MAX_PINGS_PER_MINUTE:
+        return False
+    
+    user_ping_rates[user_id].append(current_time)
+    return True
+
+# ✅ SMART WEBSOCKET EVENT HANDLERS
 
 @socketio.on('connect')
 def handle_connect():
-    """Handle user connecting to WebSocket"""
+    """Smart connection handling with prioritization"""
     user_id = session.get('user_id')
     username = session.get('user_name')
     
-    if user_id and username:
-        # Add user to active users
-        active_users[user_id] = {
-            'username': username,
-            'sid': request.sid,
-            'last_seen': time.time()
-        }
+    if not user_id or not username:
+        print("❌ Unauthorized WebSocket connection")
+        return False
+    
+    connection_status = smart_connection_management()
+    
+    if connection_status == 'need_cleanup':
+        cleanup_inactive_users()
         
-        # Join user to their personal room for notifications
-        join_room(f"user_{user_id}")
+        if len(active_users) >= MAX_TOTAL_CAPACITY:
+            emit('connection_queued', {
+                'position': len(active_users) - MAX_TOTAL_CAPACITY + 1,
+                'message': 'High traffic! You\'ll be connected automatically in a moment.',
+                'retry_delay': 15
+            })
+            return False
+    
+    # Add user to active users
+    active_users[user_id] = {
+        'username': username,
+        'sid': request.sid,
+        'last_seen': time.time(),
+        'connect_time': time.time(),
+        'priority': 'normal'
+    }
+    
+    join_room(f"user_{user_id}")
+    
+    if connection_status == 'degraded':
+        emit('connection_success', {
+            'mode': 'degraded',
+            'message': 'Connected in power-save mode. Some real-time features limited.',
+            'active_users': len(active_users),
+            'features': {
+                'realtime_pings': True,
+                'live_status': False,
+                'activity_feed': False
+            }
+        })
+        print(f"⚡ {username} connected (degraded mode) - Users: {len(active_users)}")
+    else:
+        emit('connection_success', {
+            'mode': 'full',
+            'message': 'Connected with all real-time features!',
+            'active_users': len(active_users),
+            'features': {
+                'realtime_pings': True,
+                'live_status': True,
+                'activity_feed': True
+            }
+        })
         
-        # Broadcast user came online to all users
         socketio.emit('user_status_update', {
             'user_id': user_id,
             'username': username,
             'status': 'online'
         }, broadcast=True)
         
-        print(f"✅ {username} connected - Active users: {len(active_users)}")
+        print(f"✅ {username} connected (full mode) - Users: {len(active_users)}")
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -232,24 +384,21 @@ def handle_disconnect():
     username = session.get('user_name')
     
     if user_id in active_users:
-        # Remove user from active users
+        session_duration = time.time() - active_users[user_id].get('connect_time', 0)
         del active_users[user_id]
-        
-        # Leave user's personal room
         leave_room(f"user_{user_id}")
         
-        # Broadcast user went offline to all users
         socketio.emit('user_status_update', {
             'user_id': user_id,
             'username': username,
             'status': 'offline'
         }, broadcast=True)
         
-        print(f"❌ {username} disconnected - Active users: {len(active_users)}")
+        print(f"❌ {username} disconnected after {session_duration:.1f}s - Active users: {len(active_users)}")
 
 @socketio.on('ping_user')
 def handle_ping_user(data):
-    """Handle real-time ping sending"""
+    """Handle real-time ping sending with rate limiting"""
     sender_id = session.get('user_id')
     sender_name = session.get('user_name')
     receiver_id = data.get('receiver_id')
@@ -262,7 +411,16 @@ def handle_ping_user(data):
         emit('ping_error', {'error': 'Cannot ping yourself'})
         return
     
-    # Save ping to database
+    if not check_ping_rate_limit(sender_id):
+        emit('ping_error', {
+            'error': f'Slow down! Max {MAX_PINGS_PER_MINUTE} pings per minute.'
+        })
+        print(f"🚫 Rate limited user {sender_name} (ID: {sender_id})")
+        return
+    
+    if sender_id in active_users:
+        active_users[sender_id]['last_seen'] = time.time()
+    
     conn = None
     try:
         conn = get_db_connection()
@@ -280,17 +438,19 @@ def handle_ping_user(data):
             conn.commit()
             ping_id = result[0]
             
-            # Send real-time notification to receiver
-            socketio.emit('new_ping_notification', {
-                'ping_id': ping_id,
-                'sender_id': sender_id,
-                'sender_name': sender_name,
-                'timestamp': datetime.now().isoformat(),
-                'message': f'{sender_name} pinged you!'
-            }, room=f"user_{receiver_id}")
+            if receiver_id in active_users:
+                socketio.emit('new_ping_notification', {
+                    'ping_id': ping_id,
+                    'sender_id': sender_id,
+                    'sender_name': sender_name,
+                    'timestamp': datetime.now().isoformat(),
+                    'message': f'{sender_name} pinged you!'
+                }, room=f"user_{receiver_id}")
             
-            # Confirm to sender
-            emit('ping_success', {'message': f'Pinged {data.get("receiver_name", "user")}!'})
+            emit('ping_success', {
+                'message': f'Pinged {data.get("receiver_name", "user")}!',
+                'rate_limit_remaining': MAX_PINGS_PER_MINUTE - len(user_ping_rates[sender_id])
+            })
             
             print(f"📡 Real-time ping: {sender_name} → {receiver_id}")
         else:
@@ -299,71 +459,112 @@ def handle_ping_user(data):
         cur.close()
         
     except Exception as e:
-        print(f"Ping error: {e}")
-        emit('ping_error', {'error': 'Database error'})
+        print(f"Ping database error: {e}")
+        emit('ping_error', {'error': 'Database temporarily unavailable'})
     finally:
         if conn:
             release_db_connection(conn)
 
 @socketio.on('get_active_users')
 def handle_get_active_users():
-    """Send list of currently active users"""
-    active_list = []
-    for user_id, user_data in active_users.items():
-        active_list.append({
-            'user_id': user_id,
-            'username': user_data['username'],
-            'last_seen': user_data['last_seen']
-        })
+    """Send list of currently active users with memory protection"""
+    cleanup_memory()
     
-    emit('active_users_list', {'active_users': active_list})
+    active_list = []
+    current_time = time.time()
+    
+    for user_id, user_data in active_users.items():
+        if current_time - user_data['last_seen'] < 120:
+            active_list.append({
+                'user_id': user_id,
+                'username': user_data['username'],
+                'last_seen': user_data['last_seen']
+            })
+    
+    emit('active_users_list', {
+        'active_users': active_list,
+        'server_stats': {
+            'active_connections': len(active_users),
+            'max_connections': MAX_TOTAL_CAPACITY,
+            'server_load': f"{(len(active_users)/MAX_TOTAL_CAPACITY)*100:.1f}%"
+        }
+    })
 
-def cleanup_old_pings():
-    """Auto-cleanup: Delete pings older than 24 hours and limit to 10 per user"""
-    conn = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Delete pings older than 24 hours
-        cur.execute("""
-            DELETE FROM pings 
-            WHERE timestamp < %s
-        """, (datetime.now() - timedelta(hours=24),))
-        
-        # For each receiver, keep only the 10 most recent pings
-        cur.execute("""
-            DELETE FROM pings 
-            WHERE id NOT IN (
-                SELECT id FROM (
-                    SELECT id, ROW_NUMBER() OVER (PARTITION BY receiver_id ORDER BY timestamp DESC) as rn
-                    FROM pings
-                ) ranked 
-                WHERE rn <= 10
-            )
-        """)
-        
-        conn.commit()
-        cur.close()
-        print("Ping cleanup completed")
-        
-    except Exception as e:
-        print(f"Error during ping cleanup: {e}")
-    finally:
-        if conn:
-            release_db_connection(conn)
+# ✅ BACKGROUND CLEANUP TASK
+def background_cleanup():
+    """Background task to clean up memory and inactive connections"""
+    while True:
+        try:
+            cleanup_memory()
+            time.sleep(MEMORY_CLEANUP_INTERVAL)
+        except Exception as e:
+            print(f"Background cleanup error: {e}")
+            time.sleep(60)
+
+cleanup_thread = threading.Thread(target=background_cleanup, daemon=True)
+cleanup_thread.start()
+print("🧹 Background cleanup thread started")
+
+# ✅ CAPACITY MONITORING ENDPOINTS
+@app.route('/capacity-status')
+def capacity_status():
+    """Public endpoint to show current capacity"""
+    cleanup_memory()
+    
+    total_users = len(active_users)
+    load_percentage = (total_users / MAX_TOTAL_CAPACITY) * 100
+    
+    if load_percentage < 60:
+        status = 'optimal'
+        message = '🟢 All systems optimal'
+    elif load_percentage < 80:
+        status = 'busy'
+        message = '🟡 High traffic - all features available'
+    else:
+        status = 'degraded'
+        message = '🟠 Very busy - some features limited'
+    
+    return jsonify({
+        'status': status,
+        'message': message,
+        'load_percentage': f"{load_percentage:.1f}%",
+        'active_users': total_users,
+        'capacity': MAX_TOTAL_CAPACITY,
+        'features_available': {
+            'registration': True,
+            'login': True,
+            'basic_features': True,
+            'realtime_pings': total_users < MAX_TOTAL_CAPACITY,
+            'live_status': total_users < MAX_WEBSOCKET_USERS
+        }
+    })
+
+@app.route('/server-stats')
+def server_stats():
+    """Admin endpoint to check server health"""
+    if session.get('role') != 'admin':
+        return "Unauthorized", 403
+    
+    cleanup_memory()
+    
+    return jsonify({
+        'active_users': len(active_users),
+        'max_users': MAX_TOTAL_CAPACITY,
+        'websocket_limit': MAX_WEBSOCKET_USERS,
+        'load_percentage': f"{(len(active_users)/MAX_TOTAL_CAPACITY)*100:.1f}%",
+        'ping_rates': {str(uid): len(pings) for uid, pings in user_ping_rates.items()},
+        'memory_status': 'healthy' if len(active_users) < MAX_TOTAL_CAPACITY * 0.8 else 'warning'
+    })
+
+# ✅ DATABASE INITIALIZATION AND EXISTING ROUTES (keeping all your existing code)
 
 def get_user_pings(user_id):
     """Get grouped ping notifications for a user"""
     conn = None
     try:
-        # Auto-cleanup old pings first
-        cleanup_old_pings()
-        
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
         
-        # Get grouped pings - count by sender and get latest info
         cur.execute("""
             SELECT 
                 p.sender_id,
@@ -381,7 +582,6 @@ def get_user_pings(user_id):
         
         ping_groups = cur.fetchall()
         cur.close()
-        
         return ping_groups
         
     except Exception as e:
@@ -397,7 +597,6 @@ def init_db():
         conn = get_db_connection()
         with conn:
             with conn.cursor() as c:
-                # Create tables
                 c.execute('''
                     CREATE TABLE IF NOT EXISTS players (
                         id SERIAL PRIMARY KEY,
@@ -411,7 +610,6 @@ def init_db():
                     )
                 ''')
                 
-                # Create pings table
                 c.execute('''
                     CREATE TABLE IF NOT EXISTS pings (
                         id SERIAL PRIMARY KEY,
@@ -424,50 +622,19 @@ def init_db():
                     )
                 ''')
                 
-                # PERFORMANCE INDEXES - Speed up queries by 3-15x
-                print("Creating performance indexes...")
+                # Performance indexes
+                indexes = [
+                    "CREATE INDEX IF NOT EXISTS idx_players_name ON players(name)",
+                    "CREATE INDEX IF NOT EXISTS idx_players_country ON players(country)",
+                    "CREATE INDEX IF NOT EXISTS idx_players_tier ON players(tier)",
+                    "CREATE INDEX IF NOT EXISTS idx_players_registered ON players(registered_at)",
+                    "CREATE INDEX IF NOT EXISTS idx_pings_receiver_unread ON pings(receiver_id, is_read)",
+                    "CREATE INDEX IF NOT EXISTS idx_pings_timestamp ON pings(timestamp)",
+                    "CREATE INDEX IF NOT EXISTS idx_pings_sender ON pings(sender_id)"
+                ]
                 
-                # Speed up username searches and filtering
-                c.execute('''
-                    CREATE INDEX IF NOT EXISTS idx_players_name 
-                    ON players(name)
-                ''')
-                
-                # Speed up country filtering
-                c.execute('''
-                    CREATE INDEX IF NOT EXISTS idx_players_country 
-                    ON players(country)
-                ''')
-                
-                # Speed up tier filtering  
-                c.execute('''
-                    CREATE INDEX IF NOT EXISTS idx_players_tier 
-                    ON players(tier)
-                ''')
-                
-                # Speed up table sorting by registration date
-                c.execute('''
-                    CREATE INDEX IF NOT EXISTS idx_players_registered 
-                    ON players(registered_at)
-                ''')
-                
-                # Speed up ping notifications (most important for ping system)
-                c.execute('''
-                    CREATE INDEX IF NOT EXISTS idx_pings_receiver_unread 
-                    ON pings(receiver_id, is_read)
-                ''')
-                
-                # Speed up ping cleanup and timestamp queries
-                c.execute('''
-                    CREATE INDEX IF NOT EXISTS idx_pings_timestamp 
-                    ON pings(timestamp)
-                ''')
-                
-                # Speed up ping sender queries
-                c.execute('''
-                    CREATE INDEX IF NOT EXISTS idx_pings_sender 
-                    ON pings(sender_id)
-                ''')
+                for index in indexes:
+                    c.execute(index)
                 
                 print("Performance indexes created successfully!")
                 
@@ -485,43 +652,22 @@ try:
     conn = get_db_connection()
     with conn:
         with conn.cursor() as c:
-            # Check and add social_links column
-            c.execute("""SELECT column_name FROM information_schema.columns 
-                         WHERE table_name='players' AND column_name='social_links'""")
-            if not c.fetchone():
-                c.execute("ALTER TABLE players ADD COLUMN social_links TEXT")
+            columns_to_add = [
+                ("social_links", "ALTER TABLE players ADD COLUMN social_links TEXT"),
+                ("pin", "ALTER TABLE players ADD COLUMN pin TEXT"),
+                ("is_admin", "ALTER TABLE players ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"),
+                ("password", "ALTER TABLE players ADD COLUMN password TEXT")
+            ]
             
-            # Check and add pin column
-            c.execute("""SELECT column_name FROM information_schema.columns 
-                         WHERE table_name='players' AND column_name='pin'""")
-            if not c.fetchone():
-                c.execute("ALTER TABLE players ADD COLUMN pin TEXT")
-            
-            # Check and add is_admin column
-            c.execute("""SELECT column_name FROM information_schema.columns 
-                         WHERE table_name='players' AND column_name='is_admin'""")
-            if not c.fetchone():
-                c.execute("ALTER TABLE players ADD COLUMN is_admin BOOLEAN DEFAULT FALSE")
+            for column_name, alter_query in columns_to_add:
+                c.execute(f"""SELECT column_name FROM information_schema.columns 
+                             WHERE table_name='players' AND column_name='{column_name}'""")
+                if not c.fetchone():
+                    c.execute(alter_query)
+                    print(f"{column_name} column added successfully")
+                    
 except Exception as e:
     print(f"Column migration error: {e}")
-finally:
-    if conn:
-        release_db_connection(conn)
-
-# Add password column migration  
-conn = None
-try:
-    conn = get_db_connection()
-    with conn:
-        with conn.cursor() as c:
-            # Add new password column
-            c.execute("""SELECT column_name FROM information_schema.columns 
-                         WHERE table_name='players' AND column_name='password'""")
-            if not c.fetchone():
-                c.execute("ALTER TABLE players ADD COLUMN password TEXT")
-                print("Password column added successfully")
-except Exception as e:
-    print(f"Migration error: {e}")
 finally:
     if conn:
         release_db_connection(conn)
@@ -529,12 +675,27 @@ finally:
 def sanitize_input(text):
     return re.sub(r'[^\w\s\-\.\$]', '', text)
 
+@lru_cache(maxsize=1000)
+def get_local_time_for_country(country_name, include_timezone=False):
+    try:
+        location = geolocator.geocode(country_name)
+        if not location:
+            return {"time": "N/A", "timezone": None} if include_timezone else "N/A"
+        tz_name = tz_finder.timezone_at(lat=location.latitude, lng=location.longitude)
+        if not tz_name:
+            return {"time": "N/A", "timezone": None} if include_timezone else "N/A"
+        tz = pytz.timezone(tz_name)
+        now = datetime.now(tz)
+        if include_timezone:
+            return {"time": now.strftime("%H:%M:%S"), "timezone": tz_name}
+        return now.strftime("%H:%M")
+    except:
+        return {"time": "N/A", "timezone": None} if include_timezone else "N/A"
+
+# ✅ REGISTRATION WITH PRIORITY ACCESS
 @app.route("/", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        ip = request.remote_addr
-        now = time.time()
-
         honeypot = request.form.get("email_confirm", "")
         if honeypot:
             flash("Spam detected. Submission rejected.", "error")
@@ -570,18 +731,22 @@ def register():
                     return render_template("register.html", countries=countries, tiers=tiers)
 
                 registered_at = datetime.now(timezone.utc).isoformat()
-                try:
-                    c.execute("INSERT INTO players (name, country, tier, registered_at, social_links, password) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
-                        (name, country, tier, registered_at, social_links, bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')))
-                    user_id = c.fetchone()[0]
-                    conn.commit()
-                    session["user_id"] = user_id
-                    session["user_name"] = name
-                    session["role"] = "user"
-                    flash(f"Player '{name}' registered successfully!", "success")
-                    return redirect(url_for("players"))
-                except Exception as e:
-                    flash(f"Database error: {e}", "error")
+                c.execute("INSERT INTO players (name, country, tier, registered_at, social_links, password) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                    (name, country, tier, registered_at, social_links, bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')))
+                user_id = c.fetchone()[0]
+                conn.commit()
+                
+                session["user_id"] = user_id
+                session["user_name"] = name
+                session["role"] = "user"
+                
+                # ✅ PRIORITY ACCESS FOR NEW USERS
+                session['new_user_priority'] = True
+                session['priority_expires'] = time.time() + 300  # 5 minutes priority
+                
+                flash(f"Player '{name}' registered successfully!", "success")
+                return redirect(url_for("players"))
+                
         except Exception as e:
             flash(f"Registration error: {e}", "error")
         finally:
@@ -593,16 +758,12 @@ def register():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        ip = request.remote_addr
-        now = time.time()
-        
         name = sanitize_input(request.form.get("name", ""))
         password = sanitize_input(request.form.get("password", ""))
-        remember_me = request.form.get("remember_me")  # Get Remember Me checkbox
+        remember_me = request.form.get("remember_me")
 
         # Check for admin login
         if name == ADMIN_USERNAME and password == ADMIN_PIN:
-            # Check if admin user exists in database, create if not
             conn = None
             try:
                 conn = get_db_connection()
@@ -611,7 +772,6 @@ def login():
                     admin_user = c.fetchone()
                     
                     if not admin_user:
-                        # Create admin user in database
                         registered_at = datetime.now(timezone.utc).isoformat()
                         c.execute("""INSERT INTO players (name, country, tier, registered_at, social_links, password, is_admin)
                            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id""",
@@ -621,13 +781,16 @@ def login():
                     else:
                         admin_id = admin_user[0]
                     
-                    # Set permanent session if Remember Me is checked
                     if remember_me:
                         session.permanent = True
                     
                     session["user_id"] = admin_id
                     session["user_name"] = ADMIN_USERNAME
                     session["role"] = "admin"
+                    
+                    # ✅ ADMIN PRIORITY ACCESS
+                    session['admin_priority'] = True
+                    
                     flash("Admin login successful!", "success")
                     return redirect(url_for("players"))
             except Exception as e:
@@ -645,7 +808,6 @@ def login():
                 
                 user = c.fetchone()
                 if user and bcrypt.checkpw(password.encode('utf-8'), user[2].encode('utf-8')):
-                    # Set permanent session if Remember Me is checked
                     if remember_me:
                         session.permanent = True
                     
@@ -700,7 +862,6 @@ def edit_profile():
                 if not new_name or new_country not in countries or new_tier not in tiers:
                     flash("Invalid input.", "error")
                 else:
-                    # Check if new name is already taken by another user
                     c.execute("SELECT COUNT(*) FROM players WHERE name = %s AND id != %s", (new_name, user_id))
                     name_taken = c.fetchone()[0]
                     
@@ -710,7 +871,7 @@ def edit_profile():
                         c.execute("UPDATE players SET name = %s, country = %s, tier = %s, social_links = %s WHERE id = %s",
                                   (new_name, new_country, new_tier, new_social_links, user_id))
                         conn.commit()
-                        session["user_name"] = new_name  # Update session
+                        session["user_name"] = new_name
                         flash("Profile updated successfully.", "success")
     except Exception as e:
         flash(f"Profile update error: {e}", "error")
@@ -742,7 +903,6 @@ def delete_player(player_id):
             c.execute("DELETE FROM players WHERE id = %s", (player_id,))
         conn.commit()
         flash("Player deleted successfully.", "success")
-        # If user deleted their own profile, clear session
         if user_id == player_id:
             session.clear()
     except Exception as e:
@@ -762,7 +922,6 @@ def admin_delete_profile(player_id):
     try:
         conn = get_db_connection()
         with conn.cursor() as c:
-            # Get player name for flash message
             c.execute("SELECT name FROM players WHERE id = %s", (player_id,))
             player = c.fetchone()
             player_name = player[0] if player else "Unknown"
@@ -784,7 +943,6 @@ def players():
     search_country = request.args.get("country", "").strip()
     search_tier = request.args.get("tier", "").strip()
 
-    # Fixed: Use alias to match template expectations
     query = "SELECT id, name as username, country, tier, registered_at, social_links, is_admin FROM players WHERE 1=1 AND is_admin = FALSE"
     params = []
 
@@ -813,19 +971,15 @@ def players():
         if conn:
             release_db_connection(conn)
 
-    # Fixed: Updated columns to match the aliased query
     columns = ['id', 'username', 'country', 'tier', 'registered_at', 'social_links', 'is_admin']
     players_with_local_time = []
     
     for player_tuple in players_list:
-        # Convert tuple to dictionary
         player_dict = dict(zip(columns, player_tuple))
-        # Add local time
         local_time = get_local_time_for_country(player_dict['country'])
         player_dict['local_time'] = local_time
         players_with_local_time.append(player_dict)
 
-    # Get grouped ping notifications for current user
     user_pings = []
     if 'user_id' in session:
         user_pings = get_user_pings(session['user_id'])
@@ -847,7 +1001,6 @@ def ping_player(player_id):
     
     sender_id = session['user_id']
     
-    # Don't let users ping themselves
     if sender_id == player_id:
         return jsonify({'error': 'Cannot ping yourself'}), 400
 
@@ -856,7 +1009,6 @@ def ping_player(player_id):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Optimized: Single query that validates sender exists and inserts ping
         cur.execute("""
             INSERT INTO pings (sender_id, receiver_id, timestamp, is_read) 
             SELECT %s, %s, CURRENT_TIMESTAMP, FALSE
@@ -872,7 +1024,7 @@ def ping_player(player_id):
         conn.commit()
         cur.close()
         
-        # ✅ REAL-TIME NOTIFICATION - Send instant notification via WebSocket
+        # Real-time notification via WebSocket
         sender_name = session.get('user_name', 'Unknown')
         socketio.emit('new_ping_notification', {
             'ping_id': result[0],
@@ -885,7 +1037,7 @@ def ping_player(player_id):
         return jsonify({'success': True, 'message': 'Ping sent successfully!'}), 200
         
     except Exception as e:
-        print(f"Ping error: {e}")  # This will show in your Render logs
+        print(f"Ping error: {e}")
         return jsonify({'error': 'Failed to send ping'}), 500
     finally:
         if conn:
@@ -904,7 +1056,6 @@ def mark_ping_read(sender_id):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Mark all pings from this sender to current user as read
         cur.execute("""
             UPDATE pings SET is_read = TRUE 
             WHERE sender_id = %s AND receiver_id = %s AND is_read = FALSE
@@ -935,24 +1086,11 @@ def get_time():
         print(f"Error in /get_time: {e}")
         return jsonify({"time": "Error", "timezone": None}), 500
 
-@lru_cache(maxsize=1000)
-def get_local_time_for_country(country_name, include_timezone=False):
-    try:
-        location = geolocator.geocode(country_name)
-        if not location:
-            return {"time": "N/A", "timezone": None} if include_timezone else "N/A"
-        tz_name = tz_finder.timezone_at(lat=location.latitude, lng=location.longitude)
-        if not tz_name:
-            return {"time": "N/A", "timezone": None} if include_timezone else "N/A"
-        tz = pytz.timezone(tz_name)
-        now = datetime.now(tz)
-        if include_timezone:
-            return {"time": now.strftime("%H:%M:%S"), "timezone": tz_name}
-        return now.strftime("%H:%M")
-    except:
-        return {"time": "N/A", "timezone": None} if include_timezone else "N/A"
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    # ✅ Run with SocketIO support
+    print("🧠 Smart Load Management enabled!")
+    print(f"📊 WebSocket users: {MAX_WEBSOCKET_USERS}")
+    print(f"📊 Total capacity: {MAX_TOTAL_CAPACITY}")  
+    print(f"🔒 Reserved for new users: {PRIORITY_RESERVE}")
+    print("✅ No more 'Server Busy' messages for new registrations!")
     socketio.run(app, host="0.0.0.0", port=port, debug=True)
