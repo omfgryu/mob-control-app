@@ -219,158 +219,175 @@
         });
     }
 
-    // Notification Popup functionality
-    const notificationIcon = document.getElementById('notificationIcon');
-    const notificationPopup = document.getElementById('notificationPopup');
-    const popupClose = document.getElementById('popupClose');
+    // ✅ BULLETPROOF NOTIFICATION JAVASCRIPT
 
-    if (notificationIcon && notificationPopup) {
-        notificationIcon.addEventListener('click', (e) => {
-            e.stopPropagation();
-            notificationPopup.classList.toggle('show');
-        });
-
-        if (popupClose) {
-            popupClose.addEventListener('click', (e) => {
-                e.stopPropagation();
-                notificationPopup.classList.remove('show');
-            });
-        }
-
-        // Close popup when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!notificationPopup.contains(e.target) && !notificationIcon.contains(e.target)) {
-                notificationPopup.classList.remove('show');
-            }
-        });
-
-        // Compact ping back functionality
-        const pingBackButtons = document.querySelectorAll('.ping-back-btn-compact');
-        pingBackButtons.forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const senderId = this.dataset.senderId;
-                
-                if (senderId) {
-                    // ✅ Use WebSocket for real-time ping back
-                    socket.emit('ping_user', {
-                        receiver_id: parseInt(senderId),
-                        receiver_name: this.closest('.notification-item').querySelector('.ping-sender').textContent.trim()
-                    });
-                    
-                    this.textContent = 'Sent!';
-                    this.style.background = '#4caf50';
-                    setTimeout(() => {
-                        this.textContent = 'Ping Back';
-                        this.style.background = '#00c853';
-                    }, 2000);
-                }
-                
-                // Mark as read (existing functionality)
-                if (senderId) {
-                    fetch(`/mark_ping_read/${senderId}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        }
-                    }).then(response => {
-                        if (response.ok) {
-                            // Remove this notification item completely
-                            const notificationItem = this.closest('.notification-item');
-                            notificationItem.style.opacity = '0';
-                            notificationItem.style.transform = 'translateX(-100%)';
-                            
-                            setTimeout(() => {
-                                notificationItem.remove();
-                                updateNotificationCount();
-                                checkIfEmpty();
-                            }, 300);
-                        }
-                    });
-                }
-            });
-        });
-
-        // Clear all notifications functionality
-        const clearAllBtn = document.getElementById('clearAllBtn');
-        if (clearAllBtn) {
-            clearAllBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                if (confirm('Clear all ping notifications?')) {
-                    const notificationItems = document.querySelectorAll('.notification-item');
-                    const senderIds = Array.from(notificationItems).map(item => item.dataset.senderId);
-                    
-                    // Mark all as read
-                    Promise.all(senderIds.map(senderId => 
-                        fetch(`/mark_ping_read/${senderId}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': csrfToken
-                            }
-                        })
-                    )).then(() => {
-                        // Remove all notification items
-                        notificationItems.forEach(item => {
-                            item.style.opacity = '0';
-                            item.style.transform = 'translateX(-100%)';
-                        });
-                        
-                        setTimeout(() => {
-                            notificationItems.forEach(item => item.remove());
-                            updateNotificationCount();
-                            checkIfEmpty();
-                            clearAllBtn.style.display = 'none';
-                        }, 300);
-                    });
-                }
-            });
-        }
-
-        // Function to update notification count
-        function updateNotificationCount() {
-            const notificationCount = document.getElementById('notificationCount');
-            const pingCountText = document.getElementById('pingCountText');
-            const pingPlural = document.getElementById('pingPlural');
-            const remainingNotifications = document.querySelectorAll('.notification-item').length;
-            
-            if (remainingNotifications === 0) {
-                notificationCount.style.display = 'none';
-                if (pingCountText) pingCountText.textContent = '0';
-                if (pingPlural) pingPlural.textContent = '';
-            } else {
-                // Recalculate total ping count
-                let totalPings = 0;
-                document.querySelectorAll('.ping-count').forEach(counter => {
-                    totalPings += parseInt(counter.textContent) || 0;
-                });
-                notificationCount.style.display = 'flex';
-                notificationCount.textContent = totalPings;
-                if (pingCountText) pingCountText.textContent = totalPings;
-                if (pingPlural) pingPlural.textContent = totalPings !== 1 ? 's' : '';
-            }
-        }
-
-        // Function to check if notifications are empty and show message
-        function checkIfEmpty() {
-            const notificationList = document.getElementById('notificationList');
-            const remainingNotifications = document.querySelectorAll('.notification-item').length;
-            
-            if (remainingNotifications === 0) {
-                const noNotifications = document.createElement('div');
-                noNotifications.className = 'no-notifications';
-                noNotifications.id = 'noNotifications';
-                noNotifications.textContent = 'No ping notifications yet! 🌟';
-                notificationList.appendChild(noNotifications);
-                
-                // Hide clear all button
-                const clearAllBtn = document.getElementById('clearAllBtn');
-                if (clearAllBtn) clearAllBtn.style.display = 'none';
-            }
-        }
+function toggleNotificationPopup() {
+    const popup = document.getElementById('notificationPopup');
+    if (popup.style.display === 'none' || popup.style.display === '') {
+        popup.style.display = 'block';
+        // Add click outside to close
+        setTimeout(() => {
+            document.addEventListener('click', closeOnClickOutside);
+        }, 100);
+    } else {
+        closeNotificationPopup();
     }
+}
 
+function closeNotificationPopup() {
+    const popup = document.getElementById('notificationPopup');
+    popup.style.display = 'none';
+    document.removeEventListener('click', closeOnClickOutside);
+}
+
+function closeOnClickOutside(event) {
+    const popup = document.getElementById('notificationPopup');
+    const icon = document.getElementById('notificationIcon');
+    
+    if (!popup.contains(event.target) && !icon.contains(event.target)) {
+        closeNotificationPopup();
+    }
+}
+
+function pingBack(senderId, username, buttonEl) {
+    // Change button state
+    buttonEl.textContent = 'Sending...';
+    buttonEl.style.background = '#ff9800';
+    buttonEl.disabled = true;
+    
+    // Send ping back via WebSocket if available, otherwise use HTTP
+    if (typeof socket !== 'undefined' && socket.connected) {
+        socket.emit('ping_user', {
+            receiver_id: senderId,
+            receiver_name: username
+        });
+    } else {
+        // Fallback to HTTP ping
+        fetch(`/ping/${senderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        }).then(response => {
+            if (response.ok) {
+                buttonEl.textContent = 'Sent!';
+                buttonEl.style.background = '#4caf50';
+            } else {
+                buttonEl.textContent = 'Error';
+                buttonEl.style.background = '#f44336';
+            }
+        }).catch(error => {
+            buttonEl.textContent = 'Failed';
+            buttonEl.style.background = '#f44336';
+        });
+    }
+    
+    // Reset button after 2 seconds
+    setTimeout(() => {
+        buttonEl.textContent = 'Ping Back';
+        buttonEl.style.background = '#00c853';
+        buttonEl.disabled = false;
+    }, 2000);
+    
+    // Mark as read
+    markPingAsRead(senderId);
+}
+
+function markPingAsRead(senderId) {
+    fetch(`/mark_ping_read/${senderId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    }).then(response => {
+        if (response.ok) {
+            // Remove the notification item
+            const item = document.querySelector(`[data-sender-id="${senderId}"]`);
+            if (item) {
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(-100%)';
+                setTimeout(() => {
+                    item.remove();
+                    updateNotificationCount();
+                    checkIfEmpty();
+                }, 300);
+            }
+        }
+    }).catch(error => {
+        console.error('Error marking ping as read:', error);
+    });
+}
+
+function clearAllNotifications() {
+    if (confirm('Clear all ping notifications?')) {
+        const items = document.querySelectorAll('.notification-item');
+        const senderIds = Array.from(items).map(item => item.dataset.senderId);
+        
+        // Mark all as read
+        Promise.all(senderIds.map(senderId => 
+            fetch(`/mark_ping_read/${senderId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            })
+        )).then(() => {
+            // Remove all items
+            items.forEach(item => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(-100%)';
+            });
+            
+            setTimeout(() => {
+                items.forEach(item => item.remove());
+                updateNotificationCount();
+                checkIfEmpty();
+            }, 300);
+        });
+    }
+}
+
+function updateNotificationCount() {
+    const countEl = document.getElementById('notificationCount');
+    const remaining = document.querySelectorAll('.notification-item').length;
+    
+    if (remaining === 0 && countEl) {
+        countEl.style.display = 'none';
+    }
+    
+    // Update text
+    const pingCountText = document.getElementById('pingCountText');
+    const pingPlural = document.getElementById('pingPlural');
+    if (pingCountText) pingCountText.textContent = remaining;
+    if (pingPlural) pingPlural.textContent = remaining !== 1 ? 's' : '';
+}
+
+function checkIfEmpty() {
+    const list = document.getElementById('notificationList');
+    const remaining = document.querySelectorAll('.notification-item').length;
+    
+    if (remaining === 0) {
+        list.innerHTML = `
+            <div style="
+                text-align: center;
+                padding: 40px 20px;
+                opacity: 0.6;
+                font-style: italic;
+                color: #9ecbff;
+            ">
+                No ping notifications yet! 🌟
+            </div>
+        `;
+    }
+}
+
+// Initialize notification system
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔔 Bulletproof notification system loaded');
+});
     // ✅ ENHANCED PING FUNCTIONALITY - Real-time ping buttons
     document.querySelectorAll('.ping-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -491,53 +508,183 @@
         </select>
     </div>
 
-    <!-- Compact Notification Icon - Always visible for logged-in users -->
-    {% if session.get('user_id') %}
-    <div class="notification-icon" id="notificationIcon">
-        <span class="icon">📡</span>
+    <div class="notification-system">
+    <!-- Main notification icon -->
+    <div id="notificationIcon" onclick="toggleNotificationPopup()" style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        z-index: 9999;
+        color: white;
+        font-size: 20px;
+        transition: transform 0.2s;
+    " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+        📡
+        <!-- Notification count badge -->
         {% set total_pings = user_pings|sum(attribute='ping_count') if user_pings else 0 %}
-        <div class="notification-count" id="notificationCount" {% if total_pings == 0 %}style="display: none;"{% endif %}>
-            {{ total_pings }}
-        </div>
+        {% if total_pings > 0 %}
+        <span id="notificationCount" style="
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ffd700;
+            color: #000;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            border: 2px solid white;
+        ">{{ total_pings }}</span>
+        {% endif %}
     </div>
 
-    <!-- Compact Notification Popup -->
-    <div class="notification-popup" id="notificationPopup">
-        <div class="popup-header">
+    <!-- Notification Popup - Bulletproof styling -->
+    <div id="notificationPopup" style="
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        width: 320px;
+        max-height: 400px;
+        background: #272b3f;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        display: none;
+        overflow: hidden;
+        border: 2px solid #6ec1e4;
+    ">
+        <!-- Header -->
+        <div style="
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            position: relative;
+        ">
             📡 <span id="pingCountText">{{ total_pings }}</span> Ping<span id="pingPlural">{{ 's' if total_pings != 1 else '' }}</span>
-            <button class="popup-close" id="popupClose">×</button>
+            
+            <!-- Close button -->
+            <button onclick="closeNotificationPopup()" style="
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: none;
+                border: none;
+                color: white;
+                font-size: 18px;
+                cursor: pointer;
+                opacity: 0.8;
+                padding: 5px;
+            " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">×</button>
+            
+            <!-- Clear all button -->
             {% if user_pings and user_pings|length > 0 %}
-            <button class="clear-all-btn" id="clearAllBtn">Clear</button>
+            <button onclick="clearAllNotifications()" style="
+                position: absolute;
+                right: 40px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: #ff4757;
+                border: none;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 10px;
+                cursor: pointer;
+                opacity: 0.9;
+            " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'">Clear</button>
             {% endif %}
         </div>
-        <div class="notification-list" id="notificationList">
+
+        <!-- Notification List -->
+        <div id="notificationList" style="
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+        ">
             {% if user_pings and user_pings|length > 0 %}
                 {% for ping_group in user_pings %}
-                <div class="notification-item" data-sender-id="{{ ping_group.sender_id }}">
-                    <div class="ping-info-compact">
-                        <div class="ping-sender">
+                <div class="notification-item" data-sender-id="{{ ping_group.sender_id }}" style="
+                    background: rgba(110, 193, 228, 0.1);
+                    border: 1px solid rgba(110, 193, 228, 0.3);
+                    border-radius: 8px;
+                    padding: 12px;
+                    margin-bottom: 8px;
+                    transition: all 0.3s ease;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                " onmouseover="this.style.background='rgba(110, 193, 228, 0.2)'; this.style.transform='translateX(3px)'" 
+                   onmouseout="this.style.background='rgba(110, 193, 228, 0.1)'; this.style.transform='translateX(0)'">
+                    
+                    <div style="flex: 1;">
+                        <div style="
+                            font-weight: bold;
+                            color: #6ec1e4;
+                            font-size: 14px;
+                            margin-bottom: 4px;
+                        ">
                             {{ ping_group.username }}
-                            <span class="ping-count">{{ ping_group.ping_count }}</span>
+                            <span style="
+                                background: #ffd700;
+                                color: #000;
+                                padding: 2px 6px;
+                                border-radius: 10px;
+                                font-size: 10px;
+                                margin-left: 8px;
+                            ">{{ ping_group.ping_count }}</span>
                         </div>
-                        <div class="ping-details">{{ ping_group.country }}</div>
+                        <div style="
+                            font-size: 12px;
+                            opacity: 0.8;
+                            color: #9ecbff;
+                        ">{{ ping_group.country }}</div>
                     </div>
-                    <button class="ping-back-btn-compact" data-sender-id="{{ ping_group.sender_id }}">
+                    
+                    <button onclick="pingBack({{ ping_group.sender_id }}, '{{ ping_group.username }}', this)" style="
+                        background: #00c853;
+                        color: white;
+                        border: none;
+                        padding: 6px 12px;
+                        border-radius: 6px;
+                        font-size: 11px;
+                        cursor: pointer;
+                        transition: background 0.3s;
+                    " onmouseover="this.style.background='#00a847'" onmouseout="this.style.background='#00c853'">
                         Ping Back
                     </button>
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="no-notifications" id="noNotifications">
+                <div id="noNotifications" style="
+                    text-align: center;
+                    padding: 40px 20px;
+                    opacity: 0.6;
+                    font-style: italic;
+                    color: #9ecbff;
+                ">
                     No ping notifications yet! 🌟
                 </div>
             {% endif %}
         </div>
     </div>
-    {% endif %}
 </div>
-
-<div style="margin: 0 20px;">
-    <table>
+{% endif %}
         <thead>
             <tr>
                 <th>In-Game Name</th>
