@@ -1,6 +1,6 @@
 # app.py
 from flask_wtf.csrf import CSRFProtect, CSRFError
-from flask import session, Flask, render_template, request, jsonify, redirect, url_for, flash, g
+from flask import session, Flask, render_template, request, jsonify, redirect, url_for, flash, g, send_from_directory, make_response
 from datetime import datetime, timezone, timedelta
 import pytz
 from geopy.geocoders import Nominatim
@@ -15,16 +15,63 @@ import re
 from collections import defaultdict
 import time
 from functools import lru_cache
+import atexit
+import hashlib
 
 app = Flask(__name__)
 csrf = CSRFProtect(app)
 
+# ✅ FRONTEND CACHING - Cache static files for 1 year, but allow updates
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    """Serve static files with optimized caching headers"""
+    try:
+        # Create response for static file
+        response = make_response(send_from_directory('static', filename))
+        
+        # Get file extension for different cache strategies
+        file_ext = filename.split('.')[-1].lower()
+        
+        if file_ext in ['css', 'js']:
+            # CSS/JS files - Cache for 30 days but allow updates
+            response.headers['Cache-Control'] = 'public, max-age=2592000'  # 30 days
+            response.headers['ETag'] = f'"{hash(filename)}"'
+            
+        elif file_ext in ['mp3', 'wav', 'ogg', 'mp4']:
+            # Audio/Video files - Cache for 1 year (rarely change)
+            response.headers['Cache-Control'] = 'public, max-age=31536000'  # 1 year
+            
+        elif file_ext in ['png', 'jpg', 'jpeg', 'gif', 'ico', 'svg']:
+            # Images - Cache for 1 week
+            response.headers['Cache-Control'] = 'public, max-age=604800'  # 1 week
+            
+        else:
+            # Other files - Cache for 1 hour
+            response.headers['Cache-Control'] = 'public, max-age=3600'  # 1 hour
+        
+        # Add compression hint
+        response.headers['Vary'] = 'Accept-Encoding'
+        
+        return response
+        
+    except Exception as e:
+        print(f"Static file error: {e}")
+        return "File not found", 404
+
 # Add after_request decorator to the app
 @app.after_request
 def after_request(response):
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
+    # Only apply no-cache headers to HTML pages, not static files
+    if request.endpoint != 'static_files':
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    
+    # Add performance headers for all responses
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    
     return response
 
 app.config['DEBUG'] = True
@@ -58,21 +105,94 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is required")
 
+# ✅ OPTIMIZED CONNECTION POOL - Better configuration for free tier
 try:
-    connection_pool = psycopg2.pool.ThreadedConnectionPool(1, 20, DATABASE_URL)
+    # Optimized pool settings for better performance on free tier:
+    # - min_conn=2: Always keep 2 connections ready (faster response)
+    # - max_conn=10: Reduced from 20 to stay within free tier limits
+    # - Better resource management
+    connection_pool = psycopg2.pool.ThreadedConnectionPool(
+        minconn=2,           # Keep minimum 2 connections ready
+        maxconn=10,          # Max 10 connections (free tier friendly)
+        dsn=DATABASE_URL,
+        # Connection optimization parameters
+        options='-c statement_timeout=30000'  # 30 second timeout
+    )
+    print("✅ Optimized connection pool created successfully!")
 except Exception as e:
-    print(f"Error creating connection pool: {e}")
+    print(f"❌ Error creating connection pool: {e}")
     connection_pool = None
+
+# ✅ OPTIMIZED CONNECTION MANAGEMENT
+def get_db_connection():
+    """Optimized database connection with proper pool management"""
+    if connection_pool:
+        try:
+            # Get connection from pool (much faster than creating new connection)
+            conn = connection_pool.getconn()
+            if conn:
+                return conn
+        except Exception as e:
+            print(f"Pool connection error: {e}")
+    
+    # Fallback to direct connection if pool fails
+    print("Using fallback connection...")
+    return psycopg2.connect(DATABASE_URL)
+
+def release_db_connection(conn):
+    """Properly return connection to pool or close it"""
+    if connection_pool and conn:
+        try:
+            connection_pool.putconn(conn)
+        except Exception as e:
+            print(f"Error returning connection to pool: {e}")
+            try:
+                conn.close()
+            except:
+                pass
+    else:
+        try:
+            conn.close()
+        except:
+            pass
+
+# ✅ GRACEFUL SHUTDOWN - Properly close pool on app shutdown
+def cleanup_connection_pool():
+    """Close all connections in pool on shutdown"""
+    global connection_pool
+    if connection_pool:
+        try:
+            connection_pool.closeall()
+            print("✅ Connection pool closed successfully")
+        except Exception as e:
+            print(f"Error closing connection pool: {e}")
+
+atexit.register(cleanup_connection_pool)
 
 geolocator = Nominatim(user_agent="mob_control_app", timeout=5)
 tz_finder = TimezoneFinder()
 
-def get_db_connection():
-    """Helper function to get a fresh database connection"""
-    return psycopg2.connect(DATABASE_URL)
+# ✅ TEMPLATE CACHE BUSTING - Add version numbers to static files
+def cache_bust_static(filename):
+    """Add cache busting parameter to static files"""
+    try:
+        # Use file modification time as version
+        file_path = os.path.join('static', filename)
+        if os.path.exists(file_path):
+            mtime = str(int(os.path.getmtime(file_path)))
+            return f"{filename}?v={mtime}"
+        return filename
+    except:
+        return filename
+
+# Make cache_bust_static available in templates
+@app.context_processor
+def utility_processor():
+    return dict(cache_bust=cache_bust_static)
 
 def cleanup_old_pings():
     """Auto-cleanup: Delete pings older than 24 hours and limit to 10 per user"""
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -97,14 +217,17 @@ def cleanup_old_pings():
         
         conn.commit()
         cur.close()
-        conn.close()
         print("Ping cleanup completed")
         
     except Exception as e:
         print(f"Error during ping cleanup: {e}")
+    finally:
+        if conn:
+            release_db_connection(conn)
 
 def get_user_pings(user_id):
     """Get grouped ping notifications for a user"""
+    conn = None
     try:
         # Auto-cleanup old pings first
         cleanup_old_pings()
@@ -130,17 +253,20 @@ def get_user_pings(user_id):
         
         ping_groups = cur.fetchall()
         cur.close()
-        conn.close()
         
         return ping_groups
         
     except Exception as e:
         print(f"Error getting pings: {e}")
         return []
+    finally:
+        if conn:
+            release_db_connection(conn)
 
 def init_db():
-    conn = psycopg2.connect(DATABASE_URL)
+    conn = None
     try:
+        conn = get_db_connection()
         with conn:
             with conn.cursor() as c:
                 # Create tables
@@ -217,14 +343,18 @@ def init_db():
                 
                 print("Performance indexes created successfully!")
                 
+    except Exception as e:
+        print(f"Database initialization error: {e}")
     finally:
-        conn.close()
+        if conn:
+            release_db_connection(conn)
 
 init_db()
 
 # Add missing columns if they don't exist
-conn = psycopg2.connect(DATABASE_URL)
+conn = None
 try:
+    conn = get_db_connection()
     with conn:
         with conn.cursor() as c:
             # Check and add social_links column
@@ -244,13 +374,18 @@ try:
                          WHERE table_name='players' AND column_name='is_admin'""")
             if not c.fetchone():
                 c.execute("ALTER TABLE players ADD COLUMN is_admin BOOLEAN DEFAULT FALSE")
+except Exception as e:
+    print(f"Column migration error: {e}")
 finally:
-    conn.close()
+    if conn:
+        release_db_connection(conn)
+
 # Add password column migration  
-conn2 = psycopg2.connect(DATABASE_URL)
+conn = None
 try:
-    with conn2:
-        with conn2.cursor() as c:
+    conn = get_db_connection()
+    with conn:
+        with conn.cursor() as c:
             # Add new password column
             c.execute("""SELECT column_name FROM information_schema.columns 
                          WHERE table_name='players' AND column_name='password'""")
@@ -260,7 +395,8 @@ try:
 except Exception as e:
     print(f"Migration error: {e}")
 finally:
-    conn2.close()
+    if conn:
+        release_db_connection(conn)
 
 def sanitize_input(text):
     return re.sub(r'[^\w\s\-\.\$]', '', text)
@@ -294,8 +430,9 @@ def register():
             flash("Invalid country or rank tier selected.", "error")
             return render_template("register.html", countries=countries, tiers=tiers)
 
-        conn = get_db_connection()
+        conn = None
         try:
+            conn = get_db_connection()
             with conn.cursor() as c:
                 c.execute("SELECT COUNT(*) FROM players WHERE name = %s", (name,))
                 exists = c.fetchone()[0]
@@ -317,8 +454,11 @@ def register():
                     return redirect(url_for("players"))
                 except Exception as e:
                     flash(f"Database error: {e}", "error")
+        except Exception as e:
+            flash(f"Registration error: {e}", "error")
         finally:
-            conn.close()
+            if conn:
+                release_db_connection(conn)
 
     return render_template("register.html", countries=countries, tiers=tiers)
 
@@ -335,8 +475,9 @@ def login():
         # Check for admin login
         if name == ADMIN_USERNAME and password == ADMIN_PIN:
             # Check if admin user exists in database, create if not
-            conn = get_db_connection()
+            conn = None
             try:
+                conn = get_db_connection()
                 with conn.cursor() as c:
                     c.execute("SELECT id FROM players WHERE name = %s AND is_admin = TRUE", (ADMIN_USERNAME,))
                     admin_user = c.fetchone()
@@ -361,12 +502,16 @@ def login():
                     session["role"] = "admin"
                     flash("Admin login successful!", "success")
                     return redirect(url_for("players"))
+            except Exception as e:
+                flash(f"Admin login error: {e}", "error")
             finally:
-                conn.close()
+                if conn:
+                    release_db_connection(conn)
 
         # Regular user login
-        conn = get_db_connection()
+        conn = None
         try:
+            conn = get_db_connection()
             with conn.cursor() as c:
                 c.execute("SELECT id, name, password FROM players WHERE name = %s", (name,))
                 
@@ -383,8 +528,11 @@ def login():
                     return redirect(url_for("players"))
                 else:
                     flash("Invalid name or password.", "error")
+        except Exception as e:
+            flash(f"Login error: {e}", "error")
         finally:
-            conn.close()
+            if conn:
+                release_db_connection(conn)
 
     return render_template("login.html")
 
@@ -404,8 +552,9 @@ def edit_profile():
     if not user_id:
         return redirect(url_for("login"))
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as c:
             c.execute("SELECT name as username, country, tier, social_links FROM players WHERE id = %s", (user_id,))
             user = c.fetchone()
@@ -435,8 +584,11 @@ def edit_profile():
                         conn.commit()
                         session["user_name"] = new_name  # Update session
                         flash("Profile updated successfully.", "success")
+    except Exception as e:
+        flash(f"Profile update error: {e}", "error")
     finally:
-        conn.close()
+        if conn:
+            release_db_connection(conn)
 
     return render_template("edit_profile.html", user=user, countries=countries, tiers=tiers)
 
@@ -455,20 +607,21 @@ def delete_player(player_id):
     if user_role != "admin" and user_id != player_id:
         return "Unauthorized", 403
 
+    conn = None
     try:
         conn = get_db_connection()
-        try:
-            with conn.cursor() as c:
-                c.execute("DELETE FROM players WHERE id = %s", (player_id,))
-            conn.commit()
-            flash("Player deleted successfully.", "success")
-            # If user deleted their own profile, clear session
-            if user_id == player_id:
-                session.clear()
-        finally:
-            conn.close()
+        with conn.cursor() as c:
+            c.execute("DELETE FROM players WHERE id = %s", (player_id,))
+        conn.commit()
+        flash("Player deleted successfully.", "success")
+        # If user deleted their own profile, clear session
+        if user_id == player_id:
+            session.clear()
     except Exception as e:
         flash(f"Error deleting player: {e}", "error")
+    finally:
+        if conn:
+            release_db_connection(conn)
 
     return redirect(url_for("players"))
 
@@ -476,22 +629,25 @@ def delete_player(player_id):
 def admin_delete_profile(player_id):
     if session.get("role") != "admin":
         return "Unauthorized", 403
+    
+    conn = None
     try:
         conn = get_db_connection()
-        try:
-            with conn.cursor() as c:
-                # Get player name for flash message
-                c.execute("SELECT name FROM players WHERE id = %s", (player_id,))
-                player = c.fetchone()
-                player_name = player[0] if player else "Unknown"
-                
-                c.execute("DELETE FROM players WHERE id = %s", (player_id,))
-            conn.commit()
-            flash(f"Player '{player_name}' deleted by admin.", "success")
-        finally:
-            conn.close()
+        with conn.cursor() as c:
+            # Get player name for flash message
+            c.execute("SELECT name FROM players WHERE id = %s", (player_id,))
+            player = c.fetchone()
+            player_name = player[0] if player else "Unknown"
+            
+            c.execute("DELETE FROM players WHERE id = %s", (player_id,))
+        conn.commit()
+        flash(f"Player '{player_name}' deleted by admin.", "success")
     except Exception as e:
         flash(f"Admin deletion failed: {e}", "error")
+    finally:
+        if conn:
+            release_db_connection(conn)
+    
     return redirect(url_for("players"))
 
 @app.route("/players")
@@ -516,13 +672,18 @@ def players():
 
     query += " ORDER BY registered_at DESC"
 
-    conn = get_db_connection()
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as c:
             c.execute(query, params)
             players_list = c.fetchall()
+    except Exception as e:
+        print(f"Players query error: {e}")
+        players_list = []
     finally:
-        conn.close()
+        if conn:
+            release_db_connection(conn)
 
     # Fixed: Updated columns to match the aliased query
     columns = ['id', 'username', 'country', 'tier', 'registered_at', 'social_links', 'is_admin']
@@ -564,12 +725,7 @@ def ping_player(player_id):
 
     conn = None
     try:
-        # Use connection pool if available, fallback to regular connection
-        if connection_pool:
-            conn = connection_pool.getconn()
-        else:
-            conn = get_db_connection()
-            
+        conn = get_db_connection()
         cur = conn.cursor()
         
         # Optimized: Single query that validates sender exists and inserts ping
@@ -583,31 +739,19 @@ def ping_player(player_id):
         result = cur.fetchone()
         if not result:
             cur.close()
-            if connection_pool and conn:
-                connection_pool.putconn(conn)
-            else:
-                conn.close()
             return jsonify({'error': 'Sender not found'}), 400
         
         conn.commit()
         cur.close()
         
-        # Properly return connection to pool or close it
-        if connection_pool and conn:
-            connection_pool.putconn(conn)
-        else:
-            conn.close()
-        
         return jsonify({'success': True, 'message': 'Ping sent successfully!'}), 200
         
     except Exception as e:
         print(f"Ping error: {e}")  # This will show in your Render logs
-        if conn:
-            if connection_pool:
-                connection_pool.putconn(conn)
-            else:
-                conn.close()
         return jsonify({'error': 'Failed to send ping'}), 500
+    finally:
+        if conn:
+            release_db_connection(conn)
 
 @app.route("/mark_ping_read/<int:sender_id>", methods=["POST"])
 def mark_ping_read(sender_id):
@@ -617,6 +761,7 @@ def mark_ping_read(sender_id):
     
     user_id = session['user_id']
     
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -629,12 +774,14 @@ def mark_ping_read(sender_id):
         
         conn.commit()
         cur.close()
-        conn.close()
         
         return jsonify({'success': True}), 200
     except Exception as e:
         print(f"Mark ping read error: {e}")
         return jsonify({'error': 'Database error'}), 500
+    finally:
+        if conn:
+            release_db_connection(conn)
 
 @csrf.exempt
 @app.route("/get_time", methods=["POST"])
@@ -646,27 +793,3 @@ def get_time():
     try:
         time_str = get_local_time_for_country(country, include_timezone=True)
         return jsonify(time_str)
-    except Exception as e:
-        print(f"Error in /get_time: {e}")
-        return jsonify({"time": "Error", "timezone": None}), 500
-
-@lru_cache(maxsize=1000)
-def get_local_time_for_country(country_name, include_timezone=False):
-    try:
-        location = geolocator.geocode(country_name)
-        if not location:
-            return {"time": "N/A", "timezone": None} if include_timezone else "N/A"
-        tz_name = tz_finder.timezone_at(lat=location.latitude, lng=location.longitude)
-        if not tz_name:
-            return {"time": "N/A", "timezone": None} if include_timezone else "N/A"
-        tz = pytz.timezone(tz_name)
-        now = datetime.now(tz)
-        if include_timezone:
-            return {"time": now.strftime("%H:%M:%S"), "timezone": tz_name}
-        return now.strftime("%H:%M")
-    except:
-        return {"time": "N/A", "timezone": None} if include_timezone else "N/A"
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)

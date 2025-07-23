@@ -23,14 +23,17 @@
         {% block content %}{% endblock %}
     </div>
 
-    <!-- ✅ NON-CRITICAL CSS - Loads after page render -->
-    <link rel="preload" href="{{ url_for('static', filename='style.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></noscript>
+    <!-- ✅ CACHED STATIC FILES - Load with cache busting -->
+    <link rel="preload" href="{{ url_for('static_files', filename=cache_bust('style.css')) }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static_files', filename=cache_bust('style.css')) }}"></noscript>
 
     <style>
         /* Non-critical styles loaded after page render */
         body{transition:all 0.3s ease}button:hover{background-color:#00cccc}a:hover{text-decoration:underline}@media (max-width:600px){body{padding:10px}input,select,button{display:block;margin:10px 0;width:100%}.theme-toggle{top:10px;right:10px}}
     </style>
+
+    <!-- ✅ CACHED JAVASCRIPT - Load with cache busting -->
+    <script src="{{ url_for('static_files', filename=cache_bust('theme-toggle.js')) }}" defer></script>
 
     <script>
         const toggleBtn = document.querySelector('.theme-toggle');
