@@ -11,432 +11,17 @@
     
     <!-- ✅ CRITICAL CSS - Essential layout, colors, structure for instant render -->
     <style>
-        body{background-color:#1a1d2e;color:#e0e0e0;font-family:'Segoe UI',sans-serif;margin:0;padding:0}body.light-mode{background-color:#f4f4f4;color:#000}.current-user-row{background-color:rgba(110,193,228,0.15)!important;border:2px solid #6ec1e4!important}.toggle-theme{cursor:pointer;font-size:20px;color:#6ec1e4;margin-left:15px}body.light-mode .toggle-theme{color:#00695c}header{background-color:#272b3f;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}body.light-mode header{background-color:#ffffff}.admin-header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)!important;border:2px solid #ffd700}.admin-title{color:#ffd700!important;text-shadow:0 0 10px rgba(255,215,0,0.5)}.header-left{display:flex;align-items:center}h1{margin:0;font-size:1.5rem;color:#9ecbff}body.light-mode h1{color:#00695c}.actions a,.actions form{display:inline-block;margin-right:10px}.logout-btn,.edit-btn,.delete-btn{background-color:#e53935;color:white;padding:8px 15px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;text-decoration:none;font-size:14px}.edit-btn{background-color:#6ec1e4}.ping-btn{background-color:#00c853;color:white;padding:5px 10px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}table{width:100%;border-collapse:collapse;background-color:#272b3f;margin:20px 0;border-radius:15px;overflow:hidden}body.light-mode table{box-shadow:0 0 10px rgba(0,0,0,0.1)}tr:hover{background-color:rgba(150,200,255,0.05)}body.light-mode tr:hover{background-color:rgba(0,0,0,0.05)}.search-container{box-shadow:0 0 15px rgba(150,200,255,0.15)}body.light-mode .search-container{box-shadow:0 0 10px rgba(0,0,0,0.1)}.notification-icon{position:absolute;right:20px;top:50%;transform:translateY(-50%);width:45px;height:45px;background:linear-gradient(135deg,#ff6b6b,#ee5a52);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(255,107,107,0.4);animation:gentleFloat 3s ease-in-out infinite;transition:all 0.3s ease;z-index:15}body.light-mode .notification-icon{background:linear-gradient(135deg,#ff5722,#d84315);box-shadow:0 4px 15px rgba(255,87,34,0.4)}.notification-icon:hover{transform:translateY(-50%) scale(1.1);box-shadow:0 6px 25px rgba(255,107,107,0.6)}body.light-mode .notification-icon:hover{box-shadow:0 6px 25px rgba(255,87,34,0.6)}.notification-icon .icon{font-size:20px;animation:ping-pulse 2s ease-in-out infinite}.notification-count{position:absolute;top:-8px;right:-8px;background:#ffd700;color:#000;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;animation:bounce-count 1s ease-in-out infinite alternate}@keyframes gentleFloat{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-55%)}}@keyframes ping-pulse{0%,100%{opacity:1}50%{opacity:0.7}}@keyframes bounce-count{0%{transform:scale(1)}100%{transform:scale(1.1)}}.notification-popup{position:absolute;right:20px;top:-280px;width:280px;max-height:250px;background:#272b3f;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.5);z-index:1000;opacity:0;transform:translateY(-10px);transition:all 0.3s ease;overflow:hidden}body.light-mode .notification-popup{background:#ffffff;box-shadow:0 10px 30px rgba(0,0,0,0.15)}.notification-popup.show{opacity:1;transform:translateY(0)}.popup-header{background:linear-gradient(135deg,#ff6b6b,#ee5a52);color:white;padding:12px 15px;text-align:center;font-weight:bold;font-size:14px;position:relative}body.light-mode .popup-header{background:linear-gradient(135deg,#ff5722,#d84315)}.popup-close{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:white;font-size:16px;cursor:pointer;opacity:0.8;transition:opacity 0.2s}.clear-all-btn{position:absolute;right:35px;top:50%;transform:translateY(-50%);background:#ff4757;border:none;color:white;padding:3px 6px;border-radius:3px;font-size:10px;cursor:pointer;opacity:0.8;transition:all 0.2s}.clear-all-btn:hover{opacity:1;background:#ff3838}.popup-close:hover{opacity:1}.notification-list{max-height:180px;overflow-y:auto;padding:8px}.notification-item{background:rgba(110,193,228,0.1);border:1px solid rgba(110,193,228,0.2);border-radius:6px;padding:8px 10px;margin-bottom:6px;transition:all 0.3s ease;display:flex;justify-content:space-between;align-items:center}body.light-mode .notification-item{background:rgba(0,105,92,0.05);border:1px solid rgba(0,105,92,0.1)}.notification-item:hover{background:rgba(110,193,228,0.2);transform:translateX(3px)}body.light-mode .notification-item:hover{background:rgba(0,105,92,0.1)}.ping-info-compact{display:flex;flex-direction:column;flex:1}.ping-sender{font-weight:bold;color:#6ec1e4;font-size:13px;margin-bottom:2px}body.light-mode .ping-sender{color:#00695c}.ping-details{font-size:11px;opacity:0.8;color:#9ecbff}body.light-mode .ping-details{color:#00695c}.ping-count{background:#ffd700;color:#000;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:bold;margin-left:5px}.ping-back-btn-compact{background:#00c853;color:white;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;transition:background 0.3s;margin-left:8px}.ping-back-btn-compact:hover{background:#00a847}.no-notifications{text-align:center;padding:20px;opacity:0.6;font-style:italic;font-size:12px}@media screen and (max-width:768px){.search-container{flex-direction:column;margin:10px;padding:15px}.notification-icon{right:10px;width:40px;height:40px}.notification-popup{right:10px;width:calc(100vw - 20px);max-width:250px}.search-box input[type="text"],.search-box select{width:100%}header{flex-direction:column;gap:10px;text-align:center}.header-left{flex-direction:column;gap:10px}.actions{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}table{font-size:12px}.actions-cell{flex-direction:column;gap:5px}.toggle-theme{margin-left:0;font-size:22px}}
+        body{background-color:#1a1d2e;color:#e0e0e0;font-family:'Segoe UI',sans-serif;margin:0;padding:0}body.light-mode{background-color:#f4f4f4;color:#000}.current-user-row{background-color:rgba(110,193,228,0.15)!important;border:2px solid #6ec1e4!important}.toggle-theme{cursor:pointer;font-size:20px;color:#6ec1e4;margin-left:15px}body.light-mode .toggle-theme{color:#00695c}header{background-color:#272b3f;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}body.light-mode header{background-color:#ffffff}.admin-header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)!important;border:2px solid #ffd700}.admin-title{color:#ffd700!important;text-shadow:0 0 10px rgba(255,215,0,0.5)}.header-left{display:flex;align-items:center}h1{margin:0;font-size:1.5rem;color:#9ecbff}body.light-mode h1{color:#00695c}.actions a,.actions form{display:inline-block;margin-right:10px}.logout-btn,.edit-btn,.delete-btn{background-color:#e53935;color:white;padding:8px 15px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;text-decoration:none;font-size:14px}.edit-btn{background-color:#6ec1e4}.ping-btn{background-color:#00c853;color:white;padding:5px 10px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}table{width:100%;border-collapse:collapse;background-color:#272b3f;margin:20px 0;border-radius:15px;overflow:hidden}body.light-mode table{box-shadow:0 0 10px rgba(0,0,0,0.1)}tr:hover{background-color:rgba(150,200,255,0.05)}body.light-mode tr:hover{background-color:rgba(0,0,0,0.05)}.search-container{display:flex;gap:15px;margin:20px;padding:20px;background-color:#272b3f;border-radius:15px;flex-wrap:wrap;position:relative;box-shadow:0 0 15px rgba(150,200,255,0.15)}body.light-mode .search-container{background-color:#ffffff;box-shadow:0 0 10px rgba(0,0,0,0.1)}.search-box{display:flex;flex-direction:column;gap:5px}.search-box label{font-size:0.9rem;color:#9ecbff;font-weight:bold}body.light-mode .search-box label{color:#00695c}.search-box input[type="text"],.search-box select{padding:10px;width:200px;background-color:#202437;border:none;border-radius:8px;color:#ffffff;font-size:14px}body.light-mode .search-box input[type="text"],body.light-mode .search-box select{background-color:#f0f0f0;color:#000}.actions-cell{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 
-        /* ✅ ADDITIONAL CSS THAT WAS MISSING */
-        th,td{padding:12px;border-bottom:1px solid rgba(150,200,255,0.1);text-align:center}body.light-mode th,body.light-mode td{border-bottom:1px solid rgba(0,0,0,0.1)}th{background-color:#202437;color:#9ecbff;font-weight:bold}body.light-mode th{background-color:#f0f0f0;color:#00695c}.search-container{display:flex;gap:15px;margin:20px;padding:20px;background-color:#272b3f;border-radius:15px;flex-wrap:wrap;position:relative}body.light-mode .search-container{background-color:#ffffff}.search-box{display:flex;flex-direction:column;gap:5px}.search-box label{font-size:0.9rem;color:#9ecbff;font-weight:bold}body.light-mode .search-box label{color:#00695c}.search-box input[type="text"],.search-box select{padding:10px;width:200px;background-color:#202437;border:none;border-radius:8px;color:#ffffff;font-size:14px}body.light-mode .search-box input[type="text"],body.light-mode .search-box select{background-color:#f0f0f0;color:#000}.actions-cell{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+        /* ✅ FIXED TABLE STYLING */
+        th,td{padding:12px;border-bottom:1px solid rgba(150,200,255,0.1);text-align:center}body.light-mode th,body.light-mode td{border-bottom:1px solid rgba(0,0,0,0.1)}th{background-color:#202437;color:#9ecbff;font-weight:bold}body.light-mode th{background-color:#f0f0f0;color:#00695c}
         
         /* ✅ REAL-TIME FEATURES STYLING */
         .online-indicator{display:inline-block;width:10px;height:10px;border-radius:50%;background-color:#00c853;margin-left:8px;animation:pulse-online 2s infinite}.offline-indicator{display:inline-block;width:10px;height:10px;border-radius:50%;background-color:#666;margin-left:8px}@keyframes pulse-online{0%{opacity:1}50%{opacity:0.5}100%{opacity:1}}.realtime-notification{position:fixed;top:80px;right:20px;background:linear-gradient(135deg,#00c853,#4caf50);color:white;padding:15px 20px;border-radius:10px;box-shadow:0 4px 20px rgba(0,200,83,0.4);z-index:10000;transform:translateX(300px);opacity:0;transition:all 0.3s ease}.realtime-notification.show{transform:translateX(0);opacity:1}.realtime-notification.hide{transform:translateX(300px);opacity:0}.notification-close{position:absolute;top:5px;right:10px;background:none;border:none;color:white;font-size:16px;cursor:pointer;opacity:0.8}.notification-close:hover{opacity:1}.connection-status{position:fixed;bottom:20px;right:20px;padding:8px 12px;border-radius:20px;font-size:12px;font-weight:bold;z-index:1000;transition:all 0.3s ease}.connected{background-color:#00c853;color:white}.disconnected{background-color:#f44336;color:white}.connecting{background-color:#ff9800;color:white}.active-users-counter{background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:5px 12px;border-radius:15px;font-size:12px;font-weight:bold;margin-left:15px}.ping-btn.sending{background-color:#ff9800!important;pointer-events:none}.ping-btn.sent{background-color:#4caf50!important}.ping-btn.error{background-color:#f44336!important}
+
+        /* ✅ MOBILE RESPONSIVE */
+        @media screen and (max-width:768px){.search-container{flex-direction:column;margin:10px;padding:15px}header{flex-direction:column;gap:10px;text-align:center}.header-left{flex-direction:column;gap:10px}.actions{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}table{font-size:12px}.actions-cell{flex-direction:column;gap:5px}.toggle-theme{margin-left:0;font-size:22px}}
     </style>
-
-<script>
-    // ✅ REAL-TIME WEBSOCKET CONNECTION
-    const socket = io();
-    
-    // CSRF Token - MUST be at the top
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-    // Current user ID for comparison
-    const currentUserId = {{ session.get('user_id') if session.get('user_id') else 'null' }};
-    
-    // Check if user is admin and apply special styling
-    const isAdmin = {{ 'true' if session.get('role') == 'admin' else 'false' }};
-    
-    if (isAdmin) {
-        // Apply admin header styling
-        const header = document.getElementById('main-header');
-        const title = document.getElementById('main-title');
-        
-        header.classList.add('admin-header');
-        title.classList.add('admin-title');
-    }
-
-    // ✅ WEBSOCKET EVENT HANDLERS
-    
-    // Connection status updates
-    socket.on('connect', function() {
-        console.log('✅ Connected to real-time server');
-        updateConnectionStatus('connected');
-        
-        // Request active users list
-        socket.emit('get_active_users');
-    });
-    
-    socket.on('disconnect', function() {
-        console.log('❌ Disconnected from real-time server');
-        updateConnectionStatus('disconnected');
-        
-        // Clear all online indicators
-        document.querySelectorAll('.online-indicator').forEach(indicator => {
-            indicator.className = 'offline-indicator';
-            indicator.title = 'Offline';
-        });
-        
-        updateActiveUsersCount(0);
-    });
-    
-    socket.on('connect_error', function() {
-        console.log('⚠️ Connection error');
-        updateConnectionStatus('connecting');
-    });
-    
-    // Real-time ping notifications
-    socket.on('new_ping_notification', function(data) {
-        console.log('📡 New ping received:', data);
-        showRealtimeNotification(data);
-        updateNotificationBadge();
-    });
-    
-    // User status updates (online/offline)
-    socket.on('user_status_update', function(data) {
-        console.log('👤 User status update:', data);
-        updateUserStatus(data.user_id, data.status);
-    });
-    
-    // Active users list
-    socket.on('active_users_list', function(data) {
-        console.log('📊 Active users:', data.active_users.length);
-        updateActiveUsersCount(data.active_users.length);
-        
-        // Update status indicators for all active users
-        data.active_users.forEach(user => {
-            updateUserStatus(user.user_id, 'online');
-        });
-    });
-    
-    // Ping success/error responses
-    socket.on('ping_success', function(data) {
-        console.log('✅ Ping sent successfully:', data.message);
-    });
-    
-    socket.on('ping_error', function(data) {
-        console.log('❌ Ping error:', data.error);
-        showRealtimeNotification({
-            sender_name: 'System',
-            message: data.error,
-            timestamp: new Date().toISOString()
-        }, 'error');
-    });
-    
-    // ✅ REAL-TIME FUNCTIONS
-    
-    function updateConnectionStatus(status) {
-        const statusEl = document.getElementById('connectionStatus');
-        statusEl.className = `connection-status ${status}`;
-        
-        switch(status) {
-            case 'connected':
-                statusEl.textContent = '🟢 Connected';
-                break;
-            case 'disconnected':
-                statusEl.textContent = '🔴 Disconnected';
-                break;
-            case 'connecting':
-                statusEl.textContent = '🟡 Connecting...';
-                break;
-        }
-    }
-    
-    function updateActiveUsersCount(count) {
-        const counterEl = document.getElementById('activeCount');
-        if (counterEl) {
-            counterEl.textContent = count;
-        }
-    }
-    
-    function updateUserStatus(userId, status) {
-        const statusCell = document.querySelector(`[data-player-id="${userId}"] .status-cell`);
-        if (statusCell) {
-            const indicator = statusCell.querySelector('.online-indicator, .offline-indicator');
-            if (indicator) {
-                if (status === 'online') {
-                    indicator.className = 'online-indicator';
-                    indicator.title = 'Online';
-                } else {
-                    indicator.className = 'offline-indicator';
-                    indicator.title = 'Offline';
-                }
-            }
-        }
-    }
-    
-    function showRealtimeNotification(data, type = 'success') {
-        const notification = document.getElementById('realtimeNotification');
-        const content = document.getElementById('notificationContent');
-        
-        // Set notification content
-        content.innerHTML = `
-            <strong>${data.sender_name}</strong><br>
-            ${data.message}
-            <br><small>${new Date(data.timestamp).toLocaleTimeString()}</small>
-        `;
-        
-        // Change color based on type
-        if (type === 'error') {
-            notification.style.background = 'linear-gradient(135deg, #f44336, #d32f2f)';
-        } else {
-            notification.style.background = 'linear-gradient(135deg, #00c853, #4caf50)';
-        }
-        
-        // Show notification
-        notification.classList.add('show');
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            closeRealtimeNotification();
-        }, 5000);
-    }
-    
-    function closeRealtimeNotification() {
-        const notification = document.getElementById('realtimeNotification');
-        notification.classList.remove('show');
-        notification.classList.add('hide');
-        
-        setTimeout(() => {
-            notification.classList.remove('hide');
-        }, 300);
-    }
-    
-    function updateNotificationBadge() {
-        // This would update the notification badge count
-        // Implementation depends on your existing notification system
-        console.log('📱 Updating notification badge');
-    }
-
-    // Theme toggle functionality
-    const toggle = document.getElementById('theme-toggle');
-    toggle.addEventListener('click', () => {
-        document.body.classList.toggle('light-mode');
-        toggle.innerText = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
-    });
-
-    // Table filtering
-    document.getElementById('nameSearch').addEventListener('input', filterTable);
-    document.getElementById('countryFilter').addEventListener('change', filterTable);
-    document.getElementById('tierFilter').addEventListener('change', filterTable);
-
-    function filterTable() {
-        const nameValue = document.getElementById('nameSearch').value.toLowerCase();
-        const countryValue = document.getElementById('countryFilter').value;
-        const tierValue = document.getElementById('tierFilter').value;
-        const rows = document.querySelectorAll('#playerTable tr');
-
-        rows.forEach(row => {
-            const name = row.cells[0].textContent.toLowerCase();
-            const country = row.cells[1].textContent;
-            const tier = row.cells[2].textContent;
-
-            const matchesName = name.includes(nameValue);
-            const matchesCountry = countryValue === '' || country === countryValue;
-            const matchesTier = tierValue === '' || tier === tierValue;
-
-            row.style.display = matchesName && matchesCountry && matchesTier ? '' : 'none';
-        });
-    }
-
-    // ✅ BULLETPROOF NOTIFICATION JAVASCRIPT
-
-function toggleNotificationPopup() {
-    const popup = document.getElementById('notificationPopup');
-    if (popup.style.display === 'none' || popup.style.display === '') {
-        popup.style.display = 'block';
-        // Add click outside to close
-        setTimeout(() => {
-            document.addEventListener('click', closeOnClickOutside);
-        }, 100);
-    } else {
-        closeNotificationPopup();
-    }
-}
-
-function closeNotificationPopup() {
-    const popup = document.getElementById('notificationPopup');
-    popup.style.display = 'none';
-    document.removeEventListener('click', closeOnClickOutside);
-}
-
-function closeOnClickOutside(event) {
-    const popup = document.getElementById('notificationPopup');
-    const icon = document.getElementById('notificationIcon');
-    
-    if (!popup.contains(event.target) && !icon.contains(event.target)) {
-        closeNotificationPopup();
-    }
-}
-
-function pingBack(senderId, username, buttonEl) {
-    // Change button state
-    buttonEl.textContent = 'Sending...';
-    buttonEl.style.background = '#ff9800';
-    buttonEl.disabled = true;
-    
-    // Send ping back via WebSocket if available, otherwise use HTTP
-    if (typeof socket !== 'undefined' && socket.connected) {
-        socket.emit('ping_user', {
-            receiver_id: senderId,
-            receiver_name: username
-        });
-    } else {
-        // Fallback to HTTP ping
-        fetch(`/ping/${senderId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            }
-        }).then(response => {
-            if (response.ok) {
-                buttonEl.textContent = 'Sent!';
-                buttonEl.style.background = '#4caf50';
-            } else {
-                buttonEl.textContent = 'Error';
-                buttonEl.style.background = '#f44336';
-            }
-        }).catch(error => {
-            buttonEl.textContent = 'Failed';
-            buttonEl.style.background = '#f44336';
-        });
-    }
-    
-    // Reset button after 2 seconds
-    setTimeout(() => {
-        buttonEl.textContent = 'Ping Back';
-        buttonEl.style.background = '#00c853';
-        buttonEl.disabled = false;
-    }, 2000);
-    
-    // Mark as read
-    markPingAsRead(senderId);
-}
-
-function markPingAsRead(senderId) {
-    fetch(`/mark_ping_read/${senderId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        }
-    }).then(response => {
-        if (response.ok) {
-            // Remove the notification item
-            const item = document.querySelector(`[data-sender-id="${senderId}"]`);
-            if (item) {
-                item.style.opacity = '0';
-                item.style.transform = 'translateX(-100%)';
-                setTimeout(() => {
-                    item.remove();
-                    updateNotificationCount();
-                    checkIfEmpty();
-                }, 300);
-            }
-        }
-    }).catch(error => {
-        console.error('Error marking ping as read:', error);
-    });
-}
-
-function clearAllNotifications() {
-    if (confirm('Clear all ping notifications?')) {
-        const items = document.querySelectorAll('.notification-item');
-        const senderIds = Array.from(items).map(item => item.dataset.senderId);
-        
-        // Mark all as read
-        Promise.all(senderIds.map(senderId => 
-            fetch(`/mark_ping_read/${senderId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                }
-            })
-        )).then(() => {
-            // Remove all items
-            items.forEach(item => {
-                item.style.opacity = '0';
-                item.style.transform = 'translateX(-100%)';
-            });
-            
-            setTimeout(() => {
-                items.forEach(item => item.remove());
-                updateNotificationCount();
-                checkIfEmpty();
-            }, 300);
-        });
-    }
-}
-
-function updateNotificationCount() {
-    const countEl = document.getElementById('notificationCount');
-    const remaining = document.querySelectorAll('.notification-item').length;
-    
-    if (remaining === 0 && countEl) {
-        countEl.style.display = 'none';
-    }
-    
-    // Update text
-    const pingCountText = document.getElementById('pingCountText');
-    const pingPlural = document.getElementById('pingPlural');
-    if (pingCountText) pingCountText.textContent = remaining;
-    if (pingPlural) pingPlural.textContent = remaining !== 1 ? 's' : '';
-}
-
-function checkIfEmpty() {
-    const list = document.getElementById('notificationList');
-    const remaining = document.querySelectorAll('.notification-item').length;
-    
-    if (remaining === 0) {
-        list.innerHTML = `
-            <div style="
-                text-align: center;
-                padding: 40px 20px;
-                opacity: 0.6;
-                font-style: italic;
-                color: #9ecbff;
-            ">
-                No ping notifications yet! 🌟
-            </div>
-        `;
-    }
-}
-
-// Initialize notification system
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔔 Bulletproof notification system loaded');
-});
-
-    // ✅ ENHANCED PING FUNCTIONALITY - Real-time ping buttons
-    document.querySelectorAll('.ping-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const playerId = parseInt(this.dataset.playerId);
-            const playerName = this.dataset.playerName;
-            
-            // Double check - don't let users ping themselves
-            if (currentUserId && playerId === currentUserId) {
-                this.textContent = 'Cannot ping yourself';
-                this.className = 'ping-btn error';
-                setTimeout(() => {
-                    this.textContent = 'Ping';
-                    this.className = 'ping-btn';
-                }, 2000);
-                return;
-            }
-            
-            // Show sending state
-            this.textContent = 'Sending...';
-            this.className = 'ping-btn sending';
-            
-            // ✅ Send real-time ping via WebSocket
-            socket.emit('ping_user', {
-                receiver_id: playerId,
-                receiver_name: playerName
-            });
-            
-            // Update button state after sending
-            setTimeout(() => {
-                this.textContent = 'Sent!';
-                this.className = 'ping-btn sent';
-                
-                setTimeout(() => {
-                    this.textContent = 'Ping';
-                    this.className = 'ping-btn';
-                }, 2000);
-            }, 500);
-        });
-    });
-
-</script>
-
 </head>
 <body>
 
@@ -508,186 +93,184 @@ document.addEventListener('DOMContentLoaded', function() {
             {% endfor %}
         </select>
     </div>
+</div>
 
-    {% if session.get('user_id') %}
-    <div class="notification-system">
-    <!-- Main notification icon -->
-    <div id="notificationIcon" onclick="toggleNotificationPopup()" style="
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        width: 50px;
-        height: 50px;
-        background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+<!-- ✅ BULLETPROOF NOTIFICATION SYSTEM - FIXED Z-INDEX -->
+{% if session.get('user_id') %}
+<div style="
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+    z-index: 999;
+    color: white;
+    font-size: 20px;
+    transition: transform 0.2s;
+" id="notificationIcon" onclick="toggleNotificationPopup()" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+    📡
+    <!-- Notification count badge -->
+    {% set total_pings = user_pings|sum(attribute='ping_count') if user_pings else 0 %}
+    {% if total_pings > 0 %}
+    <span style="
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #ffd700;
+        color: #000;
         border-radius: 50%;
+        width: 22px;
+        height: 22px;
         display: flex;
         align-items: center;
         justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
-        z-index: 9999;
+        font-size: 11px;
+        font-weight: bold;
+        border: 2px solid white;
+    " id="notificationCount">{{ total_pings }}</span>
+    {% endif %}
+</div>
+
+<!-- Notification Popup -->
+<div style="
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    width: 320px;
+    max-height: 400px;
+    background: #272b3f;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+    overflow: hidden;
+    border: 2px solid #6ec1e4;
+" id="notificationPopup">
+    <!-- Header -->
+    <div style="
+        background: linear-gradient(135deg, #ff6b6b, #ee5a52);
         color: white;
-        font-size: 20px;
-        transition: transform 0.2s;
-    " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-        📡
-        <!-- Notification count badge -->
-        {% set total_pings = user_pings|sum(attribute='ping_count') if user_pings else 0 %}
-        {% if total_pings > 0 %}
-        <span id="notificationCount" style="
+        padding: 15px;
+        text-align: center;
+        font-weight: bold;
+        position: relative;
+    ">
+        📡 <span id="pingCountText">{{ total_pings }}</span> Ping<span id="pingPlural">{{ 's' if total_pings != 1 else '' }}</span>
+        
+        <!-- Close button -->
+        <button onclick="closeNotificationPopup()" style="
             position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #ffd700;
-            color: #000;
-            border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: bold;
-            border: 2px solid white;
-        ">{{ total_pings }}</span>
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.8;
+            padding: 5px;
+        " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">×</button>
+        
+        <!-- Clear all button -->
+        {% if user_pings and user_pings|length > 0 %}
+        <button onclick="clearAllNotifications()" style="
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #ff4757;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0.9;
+        " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'">Clear</button>
         {% endif %}
     </div>
 
-    <!-- Notification Popup - Bulletproof styling -->
-    <div id="notificationPopup" style="
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        width: 320px;
-        max-height: 400px;
-        background: #272b3f;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        z-index: 10000;
-        display: none;
-        overflow: hidden;
-        border: 2px solid #6ec1e4;
-    ">
-        <!-- Header -->
-        <div style="
-            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-weight: bold;
-            position: relative;
-        ">
-            📡 <span id="pingCountText">{{ total_pings }}</span> Ping<span id="pingPlural">{{ 's' if total_pings != 1 else '' }}</span>
-            
-            <!-- Close button -->
-            <button onclick="closeNotificationPopup()" style="
-                position: absolute;
-                right: 10px;
-                top: 50%;
-                transform: translateY(-50%);
-                background: none;
-                border: none;
-                color: white;
-                font-size: 18px;
-                cursor: pointer;
-                opacity: 0.8;
-                padding: 5px;
-            " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">×</button>
-            
-            <!-- Clear all button -->
-            {% if user_pings and user_pings|length > 0 %}
-            <button onclick="clearAllNotifications()" style="
-                position: absolute;
-                right: 40px;
-                top: 50%;
-                transform: translateY(-50%);
-                background: #ff4757;
-                border: none;
-                color: white;
-                padding: 4px 8px;
-                border-radius: 4px;
-                font-size: 10px;
-                cursor: pointer;
-                opacity: 0.9;
-            " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'">Clear</button>
-            {% endif %}
-        </div>
-
-        <!-- Notification List -->
-        <div id="notificationList" style="
-            max-height: 300px;
-            overflow-y: auto;
-            padding: 10px;
-        ">
-            {% if user_pings and user_pings|length > 0 %}
-                {% for ping_group in user_pings %}
-                <div class="notification-item" data-sender-id="{{ ping_group.sender_id }}" style="
-                    background: rgba(110, 193, 228, 0.1);
-                    border: 1px solid rgba(110, 193, 228, 0.3);
-                    border-radius: 8px;
-                    padding: 12px;
-                    margin-bottom: 8px;
-                    transition: all 0.3s ease;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                " onmouseover="this.style.background='rgba(110, 193, 228, 0.2)'; this.style.transform='translateX(3px)'" 
-                   onmouseout="this.style.background='rgba(110, 193, 228, 0.1)'; this.style.transform='translateX(0)'">
-                    
-                    <div style="flex: 1;">
-                        <div style="
-                            font-weight: bold;
-                            color: #6ec1e4;
-                            font-size: 14px;
-                            margin-bottom: 4px;
-                        ">
-                            {{ ping_group.username }}
-                            <span style="
-                                background: #ffd700;
-                                color: #000;
-                                padding: 2px 6px;
-                                border-radius: 10px;
-                                font-size: 10px;
-                                margin-left: 8px;
-                            ">{{ ping_group.ping_count }}</span>
-                        </div>
-                        <div style="
-                            font-size: 12px;
-                            opacity: 0.8;
-                            color: #9ecbff;
-                        ">{{ ping_group.country }}</div>
+    <!-- Notification List -->
+    <div style="
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 10px;
+    " id="notificationList">
+        {% if user_pings and user_pings|length > 0 %}
+            {% for ping_group in user_pings %}
+            <div data-sender-id="{{ ping_group.sender_id }}" style="
+                background: rgba(110, 193, 228, 0.1);
+                border: 1px solid rgba(110, 193, 228, 0.3);
+                border-radius: 8px;
+                padding: 12px;
+                margin-bottom: 8px;
+                transition: all 0.3s ease;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            " class="notification-item" onmouseover="this.style.background='rgba(110, 193, 228, 0.2)'; this.style.transform='translateX(3px)'" 
+               onmouseout="this.style.background='rgba(110, 193, 228, 0.1)'; this.style.transform='translateX(0)'">
+                
+                <div style="flex: 1;">
+                    <div style="
+                        font-weight: bold;
+                        color: #6ec1e4;
+                        font-size: 14px;
+                        margin-bottom: 4px;
+                    ">
+                        {{ ping_group.username }}
+                        <span style="
+                            background: #ffd700;
+                            color: #000;
+                            padding: 2px 6px;
+                            border-radius: 10px;
+                            font-size: 10px;
+                            margin-left: 8px;
+                        ">{{ ping_group.ping_count }}</span>
                     </div>
-                    
-                    <button onclick="pingBack({{ ping_group.sender_id }}, '{{ ping_group.username }}', this)" style="
-                        background: #00c853;
-                        color: white;
-                        border: none;
-                        padding: 6px 12px;
-                        border-radius: 6px;
-                        font-size: 11px;
-                        cursor: pointer;
-                        transition: background 0.3s;
-                    " onmouseover="this.style.background='#00a847'" onmouseout="this.style.background='#00c853'">
-                        Ping Back
-                    </button>
+                    <div style="
+                        font-size: 12px;
+                        opacity: 0.8;
+                        color: #9ecbff;
+                    ">{{ ping_group.country }}</div>
                 </div>
-                {% endfor %}
-            {% else %}
-                <div id="noNotifications" style="
-                    text-align: center;
-                    padding: 40px 20px;
-                    opacity: 0.6;
-                    font-style: italic;
-                    color: #9ecbff;
-                ">
-                    No ping notifications yet! 🌟
-                </div>
-            {% endif %}
-        </div>
+                
+                <button onclick="pingBack({{ ping_group.sender_id }}, '{{ ping_group.username }}', this)" style="
+                    background: #00c853;
+                    color: white;
+                    border: none;
+                    padding: 6px 12px;
+                    border-radius: 6px;
+                    font-size: 11px;
+                    cursor: pointer;
+                    transition: background 0.3s;
+                " onmouseover="this.style.background='#00a847'" onmouseout="this.style.background='#00c853'">
+                    Ping Back
+                </button>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="
+                text-align: center;
+                padding: 40px 20px;
+                opacity: 0.6;
+                font-style: italic;
+                color: #9ecbff;
+            " id="noNotifications">
+                No ping notifications yet! 🌟
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endif %}
-</div>
 
 <div style="margin: 0 20px;">
     <table>
@@ -761,5 +344,532 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- ✅ Load SocketIO from CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+
+<!-- ✅ BULLETPROOF JAVASCRIPT - ALL ISSUES FIXED -->
+<script>
+// ✅ WEBSOCKET CONNECTION
+const socket = io();
+
+// CSRF Token - MUST be at the top
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+// Current user ID for comparison
+const currentUserId = {{ session.get('user_id') if session.get('user_id') else 'null' }};
+
+// Check if user is admin and apply special styling
+const isAdmin = {{ 'true' if session.get('role') == 'admin' else 'false' }};
+
+// ✅ INITIALIZE EVERYTHING WHEN DOM IS READY
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔔 Bulletproof notification system loaded');
+    
+    // Apply admin styling if needed
+    if (isAdmin) {
+        const header = document.getElementById('main-header');
+        const title = document.getElementById('main-title');
+        if (header) header.classList.add('admin-header');
+        if (title) title.classList.add('admin-title');
+    }
+    
+    // Initialize theme toggle
+    const toggle = document.getElementById('theme-toggle');
+    if (toggle) {
+        toggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            toggle.innerText = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+        });
+    }
+    
+    // Initialize table filtering
+    const nameSearch = document.getElementById('nameSearch');
+    const countryFilter = document.getElementById('countryFilter');
+    const tierFilter = document.getElementById('tierFilter');
+    
+    if (nameSearch) nameSearch.addEventListener('input', filterTable);
+    if (countryFilter) countryFilter.addEventListener('change', filterTable);
+    if (tierFilter) tierFilter.addEventListener('change', filterTable);
+    
+    // ✅ INITIALIZE PING BUTTONS - FIXED EVENT LISTENERS
+    initializePingButtons();
+});
+
+// ✅ WEBSOCKET EVENT HANDLERS
+socket.on('connect', function() {
+    console.log('✅ Connected to real-time server');
+    updateConnectionStatus('connected');
+    socket.emit('get_active_users');
+});
+
+socket.on('disconnect', function() {
+    console.log('❌ Disconnected from real-time server');
+    updateConnectionStatus('disconnected');
+    document.querySelectorAll('.online-indicator').forEach(indicator => {
+        indicator.className = 'offline-indicator';
+        indicator.title = 'Offline';
+    });
+    updateActiveUsersCount(0);
+});
+
+socket.on('connect_error', function() {
+    console.log('⚠️ Connection error');
+    updateConnectionStatus('connecting');
+});
+
+socket.on('new_ping_notification', function(data) {
+    console.log('📡 New ping received:', data);
+    showRealtimeNotification(data);
+    updateNotificationBadge();
+});
+
+socket.on('user_status_update', function(data) {
+    console.log('👤 User status update:', data);
+    updateUserStatus(data.user_id, data.status);
+});
+
+socket.on('active_users_list', function(data) {
+    console.log('📊 Active users:', data.active_users.length);
+    updateActiveUsersCount(data.active_users.length);
+    data.active_users.forEach(user => {
+        updateUserStatus(user.user_id, 'online');
+    });
+});
+
+socket.on('ping_success', function(data) {
+    console.log('✅ Ping sent successfully:', data.message);
+});
+
+socket.on('ping_error', function(data) {
+    console.log('❌ Ping error:', data.error);
+    showRealtimeNotification({
+        sender_name: 'System',
+        message: data.error,
+        timestamp: new Date().toISOString()
+    }, 'error');
+});
+
+// ✅ UTILITY FUNCTIONS
+function updateConnectionStatus(status) {
+    const statusEl = document.getElementById('connectionStatus');
+    if (!statusEl) return;
+    
+    statusEl.className = `connection-status ${status}`;
+    switch(status) {
+        case 'connected':
+            statusEl.textContent = '🟢 Connected';
+            break;
+        case 'disconnected':
+            statusEl.textContent = '🔴 Disconnected';
+            break;
+        case 'connecting':
+            statusEl.textContent = '🟡 Connecting...';
+            break;
+    }
+}
+
+function updateActiveUsersCount(count) {
+    const counterEl = document.getElementById('activeCount');
+    if (counterEl) {
+        counterEl.textContent = count;
+    }
+}
+
+function updateUserStatus(userId, status) {
+    const statusCell = document.querySelector(`[data-player-id="${userId}"] .status-cell`);
+    if (statusCell) {
+        const indicator = statusCell.querySelector('.online-indicator, .offline-indicator');
+        if (indicator) {
+            if (status === 'online') {
+                indicator.className = 'online-indicator';
+                indicator.title = 'Online';
+            } else {
+                indicator.className = 'offline-indicator';
+                indicator.title = 'Offline';
+            }
+        }
+    }
+}
+
+function showRealtimeNotification(data, type = 'success') {
+    const notification = document.getElementById('realtimeNotification');
+    const content = document.getElementById('notificationContent');
+    
+    if (!notification || !content) return;
+    
+    content.innerHTML = `
+        <strong>${data.sender_name}</strong><br>
+        ${data.message}
+        <br><small>${new Date(data.timestamp).toLocaleTimeString()}</small>
+    `;
+    
+    if (type === 'error') {
+        notification.style.background = 'linear-gradient(135deg, #f44336, #d32f2f)';
+    } else {
+        notification.style.background = 'linear-gradient(135deg, #00c853, #4caf50)';
+    }
+    
+    notification.classList.add('show');
+    
+    setTimeout(() => {
+        closeRealtimeNotification();
+    }, 5000);
+}
+
+function closeRealtimeNotification() {
+    const notification = document.getElementById('realtimeNotification');
+    if (!notification) return;
+    
+    notification.classList.remove('show');
+    notification.classList.add('hide');
+    
+    setTimeout(() => {
+        notification.classList.remove('hide');
+    }, 300);
+}
+
+function updateNotificationBadge() {
+    console.log('📱 Updating notification badge');
+}
+
+function filterTable() {
+    const nameValue = document.getElementById('nameSearch')?.value?.toLowerCase() || '';
+    const countryValue = document.getElementById('countryFilter')?.value || '';
+    const tierValue = document.getElementById('tierFilter')?.value || '';
+    const rows = document.querySelectorAll('#playerTable tr');
+
+    rows.forEach(row => {
+        if (row.cells && row.cells.length >= 3) {
+            const name = row.cells[0].textContent.toLowerCase();
+            const country = row.cells[1].textContent;
+            const tier = row.cells[2].textContent;
+
+            const matchesName = name.includes(nameValue);
+            const matchesCountry = countryValue === '' || country === countryValue;
+            const matchesTier = tierValue === '' || tier === tierValue;
+
+            row.style.display = matchesName && matchesCountry && matchesTier ? '' : 'none';
+        }
+    });
+}
+
+// ✅ NOTIFICATION SYSTEM FUNCTIONS - COMPLETELY FIXED
+function toggleNotificationPopup() {
+    const popup = document.getElementById('notificationPopup');
+    if (!popup) return;
+    
+    if (popup.style.display === 'none' || popup.style.display === '') {
+        popup.style.display = 'block';
+        setTimeout(() => {
+            document.addEventListener('click', closeOnClickOutside);
+        }, 100);
+    } else {
+        closeNotificationPopup();
+    }
+}
+
+function closeNotificationPopup() {
+    const popup = document.getElementById('notificationPopup');
+    if (!popup) return;
+    
+    popup.style.display = 'none';
+    document.removeEventListener('click', closeOnClickOutside);
+}
+
+function closeOnClickOutside(event) {
+    const popup = document.getElementById('notificationPopup');
+    const icon = document.getElementById('notificationIcon');
+    
+    if (!popup || !icon) return;
+    
+    if (!popup.contains(event.target) && !icon.contains(event.target)) {
+        closeNotificationPopup();
+    }
+}
+
+// ✅ FIXED PING BACK FUNCTION - NO MORE STUCK "SENDING..."
+function pingBack(senderId, username, buttonEl) {
+    if (!buttonEl || !senderId || !username) return;
+    
+    // Change button state
+    buttonEl.textContent = 'Sending...';
+    buttonEl.style.background = '#ff9800';
+    buttonEl.disabled = true;
+    
+    // Create timeout to prevent stuck buttons
+    const timeoutId = setTimeout(() => {
+        resetPingBackButton(buttonEl);
+    }, 5000);
+    
+    // Send ping back via WebSocket if available, otherwise use HTTP
+    if (typeof socket !== 'undefined' && socket.connected) {
+        socket.emit('ping_user', {
+            receiver_id: senderId,
+            receiver_name: username
+        });
+        
+        // Success feedback
+        setTimeout(() => {
+            clearTimeout(timeoutId);
+            buttonEl.textContent = 'Sent!';
+            buttonEl.style.background = '#4caf50';
+            
+            setTimeout(() => {
+                resetPingBackButton(buttonEl);
+            }, 2000);
+        }, 1000);
+    } else {
+        // HTTP fallback
+        fetch(`/ping/${senderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        }).then(response => {
+            clearTimeout(timeoutId);
+            if (response.ok) {
+                buttonEl.textContent = 'Sent!';
+                buttonEl.style.background = '#4caf50';
+            } else {
+                buttonEl.textContent = 'Error';
+                buttonEl.style.background = '#f44336';
+            }
+            
+            setTimeout(() => {
+                resetPingBackButton(buttonEl);
+            }, 2000);
+        }).catch(error => {
+            clearTimeout(timeoutId);
+            buttonEl.textContent = 'Failed';
+            buttonEl.style.background = '#f44336';
+            
+            setTimeout(() => {
+                resetPingBackButton(buttonEl);
+            }, 2000);
+        });
+    }
+    
+    // Mark as read
+    markPingAsRead(senderId);
+}
+
+function resetPingBackButton(buttonEl) {
+    if (!buttonEl) return;
+    buttonEl.textContent = 'Ping Back';
+    buttonEl.style.background = '#00c853';
+    buttonEl.disabled = false;
+}
+
+function markPingAsRead(senderId) {
+    if (!senderId) return;
+    
+    fetch(`/mark_ping_read/${senderId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    }).then(response => {
+        if (response.ok) {
+            const item = document.querySelector(`[data-sender-id="${senderId}"]`);
+            if (item) {
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(-100%)';
+                setTimeout(() => {
+                    item.remove();
+                    updateNotificationCount();
+                    checkIfEmpty();
+                }, 300);
+            }
+        }
+    }).catch(error => {
+        console.error('Error marking ping as read:', error);
+    });
+}
+
+// ✅ FIXED CLEAR ALL FUNCTION
+function clearAllNotifications() {
+    if (!confirm('Clear all ping notifications?')) return;
+    
+    const items = document.querySelectorAll('.notification-item');
+    if (items.length === 0) return;
+    
+    const senderIds = Array.from(items).map(item => item.dataset.senderId).filter(id => id);
+    
+    if (senderIds.length === 0) return;
+    
+    // Mark all as read
+    Promise.all(senderIds.map(senderId => 
+        fetch(`/mark_ping_read/${senderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        })
+    )).then(() => {
+        // Remove all items with animation
+        items.forEach(item => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateX(-100%)';
+        });
+        
+        setTimeout(() => {
+            items.forEach(item => {
+                if (item.parentNode) {
+                    item.remove();
+                }
+            });
+            updateNotificationCount();
+            checkIfEmpty();
+        }, 300);
+    }).catch(error => {
+        console.error('Error clearing notifications:', error);
+    });
+}
+
+function updateNotificationCount() {
+    const countEl = document.getElementById('notificationCount');
+    const remaining = document.querySelectorAll('.notification-item').length;
+    
+    if (countEl) {
+        if (remaining === 0) {
+            countEl.style.display = 'none';
+        } else {
+            countEl.style.display = 'flex';
+            countEl.textContent = remaining;
+        }
+    }
+    
+    // Update text in popup header
+    const pingCountText = document.getElementById('pingCountText');
+    const pingPlural = document.getElementById('pingPlural');
+    if (pingCountText) pingCountText.textContent = remaining;
+    if (pingPlural) pingPlural.textContent = remaining !== 1 ? 's' : '';
+}
+
+function checkIfEmpty() {
+    const list = document.getElementById('notificationList');
+    const remaining = document.querySelectorAll('.notification-item').length;
+    
+    if (!list) return;
+    
+    if (remaining === 0) {
+        list.innerHTML = `
+            <div style="
+                text-align: center;
+                padding: 40px 20px;
+                opacity: 0.6;
+                font-style: italic;
+                color: #9ecbff;
+            " id="noNotifications">
+                No ping notifications yet! 🌟
+            </div>
+        `;
+    }
+}
+
+// ✅ FIXED PING BUTTONS - NO MORE EVENT LISTENER ISSUES
+function initializePingButtons() {
+    // Remove existing listeners to prevent duplicates
+    document.querySelectorAll('.ping-btn').forEach(btn => {
+        btn.replaceWith(btn.cloneNode(true));
+    });
+    
+    // Add fresh event listeners
+    document.querySelectorAll('.ping-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const playerId = parseInt(this.dataset.playerId);
+            const playerName = this.dataset.playerName;
+            
+            if (!playerId || !playerName) {
+                console.error('Missing player data');
+                return;
+            }
+            
+            // Don't let users ping themselves
+            if (currentUserId && playerId === currentUserId) {
+                this.textContent = 'Cannot ping yourself';
+                this.style.background = '#f44336';
+                setTimeout(() => {
+                    this.textContent = 'Ping';
+                    this.style.background = '#00c853';
+                }, 2000);
+                return;
+            }
+            
+            // Show sending state
+            this.textContent = 'Sending...';
+            this.style.background = '#ff9800';
+            this.disabled = true;
+            
+            // Create timeout to prevent stuck buttons
+            const timeoutId = setTimeout(() => {
+                this.textContent = 'Ping';
+                this.style.background = '#00c853';
+                this.disabled = false;
+            }, 5000);
+            
+            // Send real-time ping via WebSocket
+            if (typeof socket !== 'undefined' && socket.connected) {
+                socket.emit('ping_user', {
+                    receiver_id: playerId,
+                    receiver_name: playerName
+                });
+                
+                // Success feedback
+                setTimeout(() => {
+                    clearTimeout(timeoutId);
+                    this.textContent = 'Sent!';
+                    this.style.background = '#4caf50';
+                    
+                    setTimeout(() => {
+                        this.textContent = 'Ping';
+                        this.style.background = '#00c853';
+                        this.disabled = false;
+                    }, 2000);
+                }, 1000);
+            } else {
+                // HTTP fallback
+                fetch(`/ping/${playerId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                }).then(response => {
+                    clearTimeout(timeoutId);
+                    if (response.ok) {
+                        this.textContent = 'Sent!';
+                        this.style.background = '#4caf50';
+                    } else {
+                        this.textContent = 'Error';
+                        this.style.background = '#f44336';
+                    }
+                    
+                    setTimeout(() => {
+                        this.textContent = 'Ping';
+                        this.style.background = '#00c853';
+                        this.disabled = false;
+                    }, 2000);
+                }).catch(error => {
+                    clearTimeout(timeoutId);
+                    this.textContent = 'Failed';
+                    this.style.background = '#f44336';
+                    
+                    setTimeout(() => {
+                        this.textContent = 'Ping';
+                        this.style.background = '#00c853';
+                        this.disabled = false;
+                    }, 2000);
+                });
+            }
+        });
+    });
+}
+</script>
+
 </body>
 </html>
